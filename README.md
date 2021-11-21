@@ -17,6 +17,12 @@ Todo:
 
 These instructions assume you are using Ubuntu 20.04 LTS
 
+## Installing dependencies
+
+```sh
+sudo apt install build-essential libx11-dev libglew-dev patchelf
+```
+
 ## Install MuJoCo
 MuJoCo is availble [free](https://mujoco.org/download). Download it from their website or run
 
@@ -43,10 +49,10 @@ conda install -c conda-forge gym[all]
 pip3 install mujoco-py>=2.1.2.14
 ```
 
-echo export LD_LIBRARY_PATH=$LD_LIBRARY_PATH:/home/$USER/.mujoco/mujoco210/bin:/usr/lib/nvidia >> ~/.bashrc
-
-## Other dependencies
+## Verify MuJoCo installation
 
 ```sh
-sudo apt install build-essential libx11-dev libglew-dev patchelf
+python3 ./mujoco_render/render_test.py
 ```
+
+If the installation is successful you should see the model make random movements for several seconds
