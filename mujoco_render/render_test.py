@@ -1,7 +1,7 @@
 import gym
 import numpy as np
 
-env = gym.make('Ant-v2')
+env = gym.make('Ant-v3')
 obs = env.reset()
 obs_dim = env.observation_space.shape[0]
 act_dim = env.action_space.shape[0]
