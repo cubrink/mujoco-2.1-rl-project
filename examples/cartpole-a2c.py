@@ -37,6 +37,10 @@ class Actor(nn.Module):
         self.policy_history = torch.cat((self.policy_history, pi.log_prob(action)))
         return action
 
+    def clear_buffers(self):
+        self.policy_history = torch.Tensor()
+        self.episode_rewards = []
+
 
 
 
@@ -49,8 +53,6 @@ class Critic(nn.Module):
     def __init__(self, input_size, hidden_size):
         super().__init__()
         self.value_approximator = self.initialize_value_approximator(input_size, hidden_size)
-
-        self.value_episode = []
         self.value_history = torch.Tensor()
 
     def initialize_value_approximator(self, input_size, hidden_size):
@@ -65,6 +67,9 @@ class Critic(nn.Module):
         value = self.value_approximator(observation)
         self.value_history = torch.cat((self.value_history, value))
         return value
+
+    def clear_buffers(self):
+        self.value_history = torch.Tensor()
 
 
 class AdvantageActorCritic(nn.Module):
@@ -119,11 +124,12 @@ class AdvantageActorCritic(nn.Module):
         self.optim.step()
 
         # Reset buffers for actor/critic
-        self.actor.episode_rewards = []
-        self.actor.policy_history = torch.Tensor()
-        self.critic.value_history = torch.Tensor()
-
+        self.clear_buffers()
         return actor_loss, critic_loss
+
+    def clear_buffers(self):
+        self.actor.clear_buffers()
+        self.critic.clear_buffers()
 
 
 def test_policy(a2c, env, max_steps):
@@ -136,6 +142,8 @@ def test_policy(a2c, env, max_steps):
         if done:
             break
     env.render()
+    a2c.clear_buffers()
+
 
 
 if __name__ == '__main__':
