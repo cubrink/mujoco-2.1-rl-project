@@ -24,7 +24,7 @@ sudo apt install build-essential libx11-dev libglew-dev patchelf
 ```
 
 ## Install MuJoCo
-MuJoCo is availble [free](https://mujoco.org/download). Download it from their website or run
+MuJoCo is available for [free](https://mujoco.org/download). Download it from their website or run
 
 ```sh
 wget -c https://mujoco.org/download/mujoco210-linux-x86_64.tar.gz -O - | tar -xz
