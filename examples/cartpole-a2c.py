@@ -112,7 +112,7 @@ class AdvantageActorCritic(nn.Module):
 
         # Calculate losses
         critic_loss = advantage.pow(2).mean() # Use a Mean Squared Error. 
-                                              # In optimal case advantage would be zero, so no subtraction is needed.
+                                              # In optimal case advantage is zero, so no subtraction is needed.
 
         actor_loss = (-self.actor.policy_history * advantage).mean() # ∇_θ(𝓙(π_θ)) = 𝔼[∇_θ(log π_θ(a_t | s_t) * A(s_t, a_t))]
                                                                      # Multiply by -1 for gradient descent as we want to maximize the expected return, 𝓙(π_θ).
