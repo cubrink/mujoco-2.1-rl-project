@@ -157,10 +157,11 @@ def test_policy(a2c, env, max_steps):
     a2c.clear_buffers()
 
 if __name__ == '__main__':
-    max_episodes = 5000
+    max_episodes = 10000
     max_steps = 5000
     
-    env = gym.make('MountainCarContinuous-v0')
+    # env = gym.make('MountainCarContinuous-v0')
+    env = gym.make('HalfCheetah-v3')
     
     a2c = ActorCritic(
         observation_space=env.observation_space, 
@@ -182,8 +183,8 @@ if __name__ == '__main__':
                 a2c.update()
                 break
 
-        if episode % 200 == 0:
-            test_policy(a2c, env, max_steps)
+        # if episode % 200 == 0:
+        #     test_policy(a2c, env, max_steps)
 
     while input("Enter 'quit' to exit") != 'quit':
         test_policy(a2c, env, max_steps)
