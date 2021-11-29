@@ -27,3 +27,7 @@ def as_tensor(arr, device=None):
     if device and device != arr.device:
         arr = torch.Tensor(arr).to(device)
     return arr
+
+
+def get_device(device=None) -> torch.device:
+    return torch.device(device if (torch.cuda.is_available() and device) else "cpu")

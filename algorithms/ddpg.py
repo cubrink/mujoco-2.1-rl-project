@@ -3,7 +3,7 @@ from copy import deepcopy
 from tqdm import tqdm
 from torch import distributions
 from utils.buffers import FifoBuffer
-from utils.networks import init_mlp, as_tensor
+from utils.misc import init_mlp, as_tensor
 
 import torch
 import torch.nn as nn
