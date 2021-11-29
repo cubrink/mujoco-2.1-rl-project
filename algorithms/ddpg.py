@@ -209,10 +209,11 @@ class DDPG:
                 state_curr = state_next
 
             # Perform updates, if needed
-            if (step >= self.update_threshold) and (step & self.update_freq) == 0:
-                q_loss, mu_loss = self.update()
-                q_losses.append(q_loss.item())
-                mu_losses.append(mu_loss.item())
+            if (step >= self.update_threshold) and (step % self.update_freq) == 0:
+                for _ in range(self.update_freq):
+                    q_loss, mu_loss = self.update()
+                    q_losses.append(q_loss.item())
+                    mu_losses.append(mu_loss.item())
 
         # If rendering, show model before exiting
         if render_freq:
