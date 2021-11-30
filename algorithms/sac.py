@@ -342,37 +342,44 @@ class SAC(nn.Module):
 
         return stats
 
-    def test(self, env=None, max_steps=None, render=False):
+    def test(self, env=None, max_steps=None, render=False, test_iterations=10):
         if env is None:
             env = self.env
-        state_curr = env.reset()
 
-        stationary_count_threshold = 50
-        stationary_count = 0
-        total_reward = 0
+        episode_rewards = []
 
-        if max_steps is None:
-            max_steps = 25000
+        for episode in range(test_iterations):
+            state_curr = env.reset()
 
-        for step in range(max_steps):
-            action = self.get_action(state_curr, sample_from_dist=False)
-            state_next, reward, done, _ = env.step(action)
-            mse = ((state_curr - state_next) ** 2).sum()
+            stationary_count_threshold = 50
+            stationary_count = 0
+            total_reward = 0
 
-            if mse < self.mse_threshold:
-                stationary_count += 1
-                reward -= self.stationary_penalty
-            if stationary_count >= stationary_count_threshold:
-                done = True
+            if max_steps is None:
+                max_steps = 25000
 
-            state_curr = state_next
-            total_reward += reward
-            if render:
-                env.render()
-            if done:
-                break
+            for step in range(max_steps):
+                action = self.get_action(state_curr, sample_from_dist=False)
+                state_next, reward, done, _ = env.step(action)
+                mse = ((state_curr - state_next) ** 2).sum()
 
-        return total_reward
+                if mse < self.mse_threshold:
+                    stationary_count += 1
+                    # reward -= self.stationary_penalty
+                if stationary_count >= stationary_count_threshold:
+                    done = True
+
+                state_curr = state_next
+                total_reward += reward
+                if render:
+                    env.render()
+                if done:
+                    break
+
+            episode_rewards.append(total_reward)
+            render = False  # Only render the first iteration, if rendering
+        mean_reward = sum(episode_rewards) / len(episode_rewards)
+        return mean_reward
 
     @torch.no_grad()
     def polyak_average(self, target, source):
