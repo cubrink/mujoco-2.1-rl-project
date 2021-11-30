@@ -5,8 +5,8 @@ import torch.optim as optim
 import torch.nn.functional as F
 import torch.distributions as distributions
 
-
 from tqdm import tqdm
+from pathlib import Path
 from copy import deepcopy
 from utils.misc import as_numpy, init_mlp, as_tensor, get_device
 from utils.buffers import FifoBuffer
@@ -104,7 +104,7 @@ class DoubleQActorCritic(nn.Module):
         super().add_module("critic", self.critic)
 
 
-class SAC:
+class SAC(nn.Module):
     """
     Soft Actor Critic algorithm using PyTorch
     """
@@ -117,24 +117,32 @@ class SAC:
         update_threshold,
         batch_size=128,
         buffer_size=int(1e6),
+        num_update=1,
         lr=1e-3,
-        alpha=0.1,
+        alpha=0.2,
         gamma=0.99,
         tau=0.995,
+        alpha_decay=1,
+        model_dir="./models",
         device=None,
     ):
+        super().__init__()
         # Misc
         self.env = env
         self.observation_space = env.observation_space
         self.action_space = env.action_space
         self.device = get_device(device=device)
+        self.model_dir = Path(model_dir)
+        self.model_dir.mkdir(exist_ok=True, parents=True)
 
         # Hyperparameters
         self.alpha = alpha
         self.gamma = gamma
         self.tau = tau
         self.lr = lr
+        self.alpha_decay = alpha_decay
         self.batch_size = batch_size
+        self.num_update = num_update
         self.update_threshold = update_threshold
         self.update_freq = update_freq
 
@@ -234,6 +242,9 @@ class SAC:
         # Update target networks with polyak averaging
         self.polyak_average(target=self.ac_target, source=self.ac)
 
+        # Decay alpha
+        self.alpha *= self.alpha_decay
+
         return q1_loss, q2_loss, pi_loss
 
     def train(self, steps, render_freq=None, random_before_threshold=True):
@@ -246,6 +257,9 @@ class SAC:
             "q2_loss": [],
             "pi_loss": [],
         }
+
+        max_reward = 0
+        quit_early = False  # Change this value in the debugger to exit early!
 
         for step in tqdm(range(steps)):
             # Get action to take in environment
@@ -268,21 +282,28 @@ class SAC:
                     self.render()
 
                 state_curr = env.reset()
+                episode_reward = sum(episode_rewards)
                 stats["reward_history"].append(sum(episode_rewards))
                 episode_rewards.clear()
+
+                if episode_reward > max_reward:
+                    max_reward = episode_reward
+                    model_path = self.model_dir / f"sac-{episode_reward}.pt"
+                    torch.save(self.state_dict(), model_path)
             else:
                 state_curr = state_next
 
             # Perform updates, if needed
             if (step >= self.update_threshold) and (step % self.update_freq) == 0:
-                for _ in range(self.update_freq):
+                for _ in range(self.num_update):
                     q1_loss, q2_loss, pi_loss = self.update()
                     stats["q1_loss"].append(q1_loss.item())
                     stats["q2_loss"].append(q2_loss.item())
                     stats["pi_loss"].append(pi_loss.item())
+
         return stats
 
-    def render(self, env=None, max_steps=1000):
+    def render(self, env=None, max_steps=250):
         if env is None:
             env = self.env
         state = env.reset()
@@ -308,17 +329,19 @@ if __name__ == "__main__":
     import matplotlib.pyplot as plt
     from gym.wrappers import Monitor
 
-    torch.autograd.set_detect_anomaly(True)
-
-    env = gym.make("Pendulum-v1")
+    env = gym.make("Ant-v3")
     sac = SAC(
         env,
         hidden_sizes=(128, 128),
         update_freq=64,
-        update_threshold=1024,
+        num_update=64,
+        update_threshold=1000,
+        batch_size=512,
+        alpha=0.2,
+        alpha_decay=1,
         device="cuda:0",
     )
-    training_stats = sac.train(steps=10000, render_freq=2500)
+    training_stats = sac.train(steps=2_000_000, render_freq=50_000)
 
     while input("Type 'quit' to quit: ") != "quit":
         sac.render()
@@ -329,8 +352,9 @@ if __name__ == "__main__":
         plt.plot(data)
         plt.title(title)
 
-    plt.savefig("sac-10k-pendulum-solved.png")
+    plt.savefig("sac-2000k-ant-v3.png")
 
-    monitor = Monitor(env, "./video", force=True)
-    sac.render(monitor)
+    x = 5
+    # monitor = Monitor(env, "./video", force=True)
+    # sac.render(monitor)
 
