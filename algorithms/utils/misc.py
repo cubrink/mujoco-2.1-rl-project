@@ -29,5 +29,10 @@ def as_tensor(arr, device=None):
     return arr
 
 
+def as_numpy(tensor):
+    return tensor.cpu().detach().numpy()
+
+
 def get_device(device=None) -> torch.device:
     return torch.device(device if (torch.cuda.is_available() and device) else "cpu")
+
