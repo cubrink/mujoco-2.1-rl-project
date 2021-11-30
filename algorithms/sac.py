@@ -123,6 +123,7 @@ class SAC(nn.Module):
         gamma=0.99,
         tau=0.995,
         alpha_decay=1,
+        stationary_penalty=100,
         model_dir="./models",
         device=None,
     ):
@@ -134,12 +135,14 @@ class SAC(nn.Module):
         self.device = get_device(device=device)
         self.model_dir = Path(model_dir)
         self.model_dir.mkdir(exist_ok=True, parents=True)
+        self.mse_threshold = 1e-4  # Threshold to prevent ant from standing still and gaining healthy rewards
 
         # Hyperparameters
         self.alpha = alpha
         self.gamma = gamma
         self.tau = tau
         self.lr = lr
+        self.stationary_penalty = stationary_penalty
         self.alpha_decay = alpha_decay
         self.batch_size = batch_size
         self.num_update = num_update
@@ -222,6 +225,11 @@ class SAC(nn.Module):
         q2_loss.mean()
         self.optim_q2.step()
 
+        # Critic doesn't need gradient during actor updates
+        # this speeds up training by ~20%
+        for p in self.ac.critic.parameters():
+            p.requires_grad = False
+
         # Update policy
         self.optim_pi.zero_grad()
         policy_s = self.get_policy(s)
@@ -239,6 +247,9 @@ class SAC(nn.Module):
         pi_loss.backward()
         self.optim_pi.step()
 
+        for p in self.ac.critic.parameters():
+            p.requires_grad = True
+
         # Update target networks with polyak averaging
         self.polyak_average(target=self.ac_target, source=self.ac)
 
@@ -247,7 +258,9 @@ class SAC(nn.Module):
 
         return q1_loss, q2_loss, pi_loss
 
-    def train(self, steps, render_freq=None, random_before_threshold=True):
+    def train(
+        self, steps, render_freq=None, random_before_threshold=True, max_steps=None
+    ):
         state_curr = self.env.reset()
         last_render = 0  # Last step that was rendered
         episode_rewards = []  # Individual rewards within an episode
@@ -257,8 +270,9 @@ class SAC(nn.Module):
             "q2_loss": [],
             "pi_loss": [],
         }
-
-        max_reward = 0
+        max_reward = -100
+        render = False
+        render_now = False
         quit_early = False  # Change this value in the debugger to exit early!
 
         for step in tqdm(range(steps)):
@@ -269,7 +283,13 @@ class SAC(nn.Module):
                 action = self.get_action(state_curr)
 
             # Take step in environment
-            state_next, reward, done, _ = env.step(action)
+            state_next, reward, done, log = env.step(action)
+            # mse = ((state_next - state_curr) ** 2).sum()
+            # if mse < self.mse_threshold:
+            #     reward -= self.stationary_penalty
+
+            if render_now:
+                env.render()
 
             # Store transition
             self.replay_buffer.store((state_curr, action, reward, state_next, done))
@@ -279,22 +299,25 @@ class SAC(nn.Module):
             if done:
                 if render_freq and (step - last_render) >= render_freq:
                     last_render = step
-                    self.render()
+                    render = True
+
+                test_result = self.test(render=render)
+                render = False
 
                 state_curr = env.reset()
                 episode_reward = sum(episode_rewards)
-                stats["reward_history"].append(sum(episode_rewards))
+                stats["reward_history"].append(episode_reward)
                 episode_rewards.clear()
 
-                if episode_reward > max_reward:
-                    max_reward = episode_reward
-                    model_path = self.model_dir / f"sac-{episode_reward}.pt"
+                if test_result > max_reward:
+                    max_reward = test_result
+                    model_path = self.model_dir / f"sac-{int(test_result)}-{step}.pt"
                     torch.save(self.state_dict(), model_path)
             else:
                 state_curr = state_next
 
             # Perform updates, if needed
-            if (step >= self.update_threshold) and (step % self.update_freq) == 0:
+            if (step >= self.batch_size) and (step % self.update_freq) == 0:
                 for _ in range(self.num_update):
                     q1_loss, q2_loss, pi_loss = self.update()
                     stats["q1_loss"].append(q1_loss.item())
@@ -303,18 +326,43 @@ class SAC(nn.Module):
 
         return stats
 
-    def render(self, env=None, max_steps=250):
+    def test(self, env=None, max_steps=None, render=False):
         if env is None:
             env = self.env
-        state = env.reset()
+        state_curr = env.reset()
+
+        stationary_count_threshold = 50
+        stationary_count = 0
         total_reward = 0
+
+        mses = []
+        plot = False
+        # render = True
+
+        if max_steps is None:
+            max_steps = int(1e6)
         for step in range(max_steps):
-            action = self.get_action(state, sample_from_dist=False)
-            state, reward, done, _ = env.step(action)
+            action = self.get_action(state_curr, sample_from_dist=False)
+            state_next, reward, done, _ = env.step(action)
+            # mse = ((state_curr - state_next) ** 2).sum()
+            # mses.append(mse)
+            # if mse < self.mse_threshold:
+            #     stationary_count += 1
+            #     reward -= self.stationary_penalty
+            # if stationary_count >= stationary_count_threshold:
+            #     done = True
+            state_curr = state_next
             total_reward += reward
-            env.render()
+            if render:
+                env.render()
             if done:
                 break
+
+        if plot:
+            import matplotlib.pyplot as plt
+
+            plt.plot(mses)
+
         return total_reward
 
     @torch.no_grad()
@@ -329,22 +377,28 @@ if __name__ == "__main__":
     import matplotlib.pyplot as plt
     from gym.wrappers import Monitor
 
-    env = gym.make("Ant-v3")
+    torch.set_num_threads(torch.get_num_threads())
+
+    env = gym.make(
+        "Walker2d-v3",
+        # healthy_z_range=(0.26, 2.0),
+        # healthy_reward=-0.01,
+        # ctrl_cost_weight=1e-2,
+    ).unwrapped  # Crucial! This gets rid of the time limit so it doesn't stop at 1000 steps every time
     sac = SAC(
         env,
-        hidden_sizes=(128, 128),
+        hidden_sizes=(256, 256),
         update_freq=64,
         num_update=64,
-        update_threshold=1000,
-        batch_size=512,
-        alpha=0.2,
-        alpha_decay=1,
+        update_threshold=4096,
+        batch_size=128,
+        alpha=0.5,
         device="cuda:0",
     )
-    training_stats = sac.train(steps=2_000_000, render_freq=50_000)
+    training_stats = sac.train(steps=2_000_000, render_freq=50_000, max_steps=5000)
 
     while input("Type 'quit' to quit: ") != "quit":
-        sac.render()
+        sac.test(render=True)
 
     plt.figure(figsize=(12, 8))
     for idx, (title, data) in enumerate(training_stats.items(), start=1):
