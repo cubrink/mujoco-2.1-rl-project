@@ -227,6 +227,7 @@ class SAC:
             self.ac.critic(s, a_tilde).min(axis=0).values
             - self.alpha * log_prob_a_tilde
         ).mean()
+        pi_loss *= -1  # We want to use gradient ascent, so *-1
         pi_loss.backward()
         self.optim_pi.step()
 
