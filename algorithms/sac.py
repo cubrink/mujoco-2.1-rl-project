@@ -102,6 +102,7 @@ class DoubleQActorCritic(nn.Module):
         )
         self.critic = DoubleQCritic(critic_sizes, device=self.device)
         super().add_module("critic", self.critic)
+        self.to(self.device)
 
 
 class SAC(nn.Module):
@@ -116,14 +117,14 @@ class SAC(nn.Module):
         update_freq,
         update_threshold,
         batch_size=128,
-        buffer_size=int(1e6),
+        buffer_size=int(3e5),
         num_update=1,
-        lr=1e-3,
+        lr=5e-4,
         alpha=0.2,
         gamma=0.99,
         tau=0.995,
         alpha_decay=1,
-        stationary_penalty=100,
+        stationary_penalty=1,
         model_dir="./models",
         device=None,
     ):
@@ -170,6 +171,8 @@ class SAC(nn.Module):
         self.optim_pi = optim.Adam(self.ac.actor.parameters(), lr=lr)
         self.optim_q1 = optim.Adam(self.ac.critic._q1.parameters(), lr=lr)
         self.optim_q2 = optim.Adam(self.ac.critic._q2.parameters(), lr=lr)
+
+        self.to(self.device)
 
     def get_action(self, state, sample_from_dist=True):
         """
@@ -222,7 +225,7 @@ class SAC(nn.Module):
         # Update q2
         self.optim_q2.zero_grad()
         q2_loss = ((self.ac.critic.q2(s, a) - target) ** 2).mean()
-        q2_loss.mean()
+        q2_loss.backward()
         self.optim_q2.step()
 
         # Critic doesn't need gradient during actor updates
@@ -286,7 +289,17 @@ class SAC(nn.Module):
             state_next, reward, done, log = env.step(action)
             # mse = ((state_next - state_curr) ** 2).sum()
             # if mse < self.mse_threshold:
-            #     reward -= self.stationary_penalty
+            #     stationary_reward = -self.stationary_penalty
+            # else:
+            #     stationary_reward = 0
+            # reward = (
+            #     (10 * log["forward_reward"])
+            #     + (0.01 * log["x_position"])
+            #     + log["reward_survive"]
+            #     + log["reward_contact"]
+            #     + log["reward_ctrl"]
+            #     + stationary_reward
+            # )
 
             if render_now:
                 env.render()
@@ -301,7 +314,7 @@ class SAC(nn.Module):
                     last_render = step
                     render = True
 
-                test_result = self.test(render=render)
+                test_result = self.test(render=render, max_steps=max_steps)
                 render = False
 
                 state_curr = env.reset()
@@ -324,6 +337,9 @@ class SAC(nn.Module):
                     stats["q2_loss"].append(q2_loss.item())
                     stats["pi_loss"].append(pi_loss.item())
 
+            if quit_early:
+                break
+
         return stats
 
     def test(self, env=None, max_steps=None, render=False):
@@ -335,33 +351,26 @@ class SAC(nn.Module):
         stationary_count = 0
         total_reward = 0
 
-        mses = []
-        plot = False
-        # render = True
-
         if max_steps is None:
-            max_steps = int(1e6)
+            max_steps = 25000
+
         for step in range(max_steps):
             action = self.get_action(state_curr, sample_from_dist=False)
             state_next, reward, done, _ = env.step(action)
-            # mse = ((state_curr - state_next) ** 2).sum()
-            # mses.append(mse)
-            # if mse < self.mse_threshold:
-            #     stationary_count += 1
-            #     reward -= self.stationary_penalty
-            # if stationary_count >= stationary_count_threshold:
-            #     done = True
+            mse = ((state_curr - state_next) ** 2).sum()
+
+            if mse < self.mse_threshold:
+                stationary_count += 1
+                reward -= self.stationary_penalty
+            if stationary_count >= stationary_count_threshold:
+                done = True
+
             state_curr = state_next
             total_reward += reward
             if render:
                 env.render()
             if done:
                 break
-
-        if plot:
-            import matplotlib.pyplot as plt
-
-            plt.plot(mses)
 
         return total_reward
 
@@ -379,12 +388,14 @@ if __name__ == "__main__":
 
     torch.set_num_threads(torch.get_num_threads())
 
+    # env = gym.make("Pendulum-v1")
     env = gym.make(
-        "Walker2d-v3",
-        # healthy_z_range=(0.26, 2.0),
-        # healthy_reward=-0.01,
+        "Ant-v3",
+        healthy_z_range=(0.30, 2.0),
+        # healthy_reward=0.01,
         # ctrl_cost_weight=1e-2,
     ).unwrapped  # Crucial! This gets rid of the time limit so it doesn't stop at 1000 steps every time
+    # env._max_episode_steps = 25_000
     sac = SAC(
         env,
         hidden_sizes=(256, 256),
@@ -395,7 +406,7 @@ if __name__ == "__main__":
         alpha=0.5,
         device="cuda:0",
     )
-    training_stats = sac.train(steps=2_000_000, render_freq=50_000, max_steps=5000)
+    training_stats = sac.train(steps=2_000_000, render_freq=50_000, max_steps=10000)
 
     while input("Type 'quit' to quit: ") != "quit":
         sac.test(render=True)
