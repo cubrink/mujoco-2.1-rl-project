@@ -1,5 +1,8 @@
 import os
 import sys
+from pathlib import Path
+import matplotlib.pyplot as plt
+import torch
 
 # Path hack as we don't need this to be an installable package
 root_path = os.path.dirname(
@@ -8,10 +11,11 @@ root_path = os.path.dirname(
 sys.path.insert(0, root_path)
 
 from rl.algorithms.ddpg import DDPG
-import matplotlib.pyplot as plt
 
 if __name__ == "__main__":
     import gym
+
+    model_dir = Path(__file__).parent / "models"
 
     env = gym.make("Ant-v3", healthy_z_range=(0.30, 2.0)).unwrapped
 
@@ -23,12 +27,13 @@ if __name__ == "__main__":
         batch_size=128,
         update_threshold=4096,
         noise_std=0.1,
+        model_dir=model_dir,
         device="cuda:0",
     )
-    training_stats = ddpg.train(env, steps=30_000, render_freq=100_000)
+    training_stats = ddpg.train(env, steps=500_000, render_freq=100_000)
 
     while input("Type 'quit' to quit: ") != "quit":
-        ddpg.render(env)
+        ddpg.test(env, render=True)
 
     plt.figure(figsize=(12, 8))
     for idx, (title, data) in enumerate(training_stats.items(), start=1):
@@ -37,4 +42,6 @@ if __name__ == "__main__":
         plt.title(title)
 
     plt.savefig("ddpg-500k-Ant-v3.png")
+    model_path = model_dir / "ddpg-antv3-final.pt"
+    torch.save(ddpg.state_dict(), model_path)
 
