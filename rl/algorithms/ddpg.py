@@ -77,7 +77,7 @@ class ActorCritic(nn.Module):
         super().add_module("critic", self.critic)
 
 
-class DDPG:
+class DDPG(nn.Module):
     """
     Deep Determinisitic Policy Gradient algorithm using PyTorch
     """
@@ -90,6 +90,7 @@ class DDPG:
         update_freq,
         update_threshold,
         noise_std,
+        model_dir,
         batch_size=128,
         buffer_size=int(1e6),
         lr=1e-3,
@@ -97,13 +98,14 @@ class DDPG:
         tau=0.995,
         device=None,
     ):
+        super().__init__()
         # Misc
         self.observation_space = observation_space
         self.action_space = action_space
         self.device = torch.device(
             device if (torch.cuda.is_available() and device) else "cpu"
         )
-        self.model_dir = Path("./models")
+        self.model_dir = model_dir
         self.model_dir.mkdir(exist_ok=True, parents=True)
 
         # Hyperparameters
@@ -167,7 +169,7 @@ class DDPG:
 
         return q_loss, mu_loss
 
-    def train(self, env, steps, render_freq=None, random_before_threshold=True):
+    def train(self, env, steps, random_before_threshold=True):
         """
         Trains the network using the DDPG algorithm
 
@@ -179,6 +181,7 @@ class DDPG:
         """
         state_curr = env.reset()
         stats = {"reward_history": [], "q_loss": [], "mu_loss": []}
+        max_reward = -100
 
         for step in tqdm(range(steps)):
             # Get action to take in environment
@@ -221,9 +224,6 @@ class DDPG:
                         self.model_dir / f"ddpg-antv3-{int(test_result)}-{step}.pt"
                     )
                     torch.save(self.state_dict(), model_path)
-        # If rendering, show model before exiting
-        if render_freq:
-            self.render(env)
 
         return stats
 
@@ -308,7 +308,7 @@ if __name__ == "__main__":
         noise_std=0.1,
         device="cuda:0",
     )
-    reward_history, q_loss, mu_loss = ddpg.train(env, steps=30_000, render_freq=100_000)
+    reward_history, q_loss, mu_loss = ddpg.train(env, steps=30_000)
 
     while input("Type 'quit' to quit: ") != "quit":
         ddpg.render(env)
