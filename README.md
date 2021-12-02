@@ -1,17 +1,31 @@
 # mujoco-2.1-rl-project
-Class project for MATH5001 - Mathematics of Machine Learning
+Implementations of different deep reinforcement learning algorithms in PyTorch using OpenAI Gym and MuJoCo as training environments
 
-Todo:
-- [X] Give installation instructions / Describe environment
-- [X] Give basic example of rendering environment
-- [ ] Decide on deep learning framework / version
-- [ ] Decide on [algorithm(s)](https://spinningup.openai.com/en/latest/spinningup/rl_intro2.html) and make justification(s) 
-- [ ] Find some links / tutorials to guide the project
-- [ ] Get *bad* model by Saturday, Nov 20th
-- [ ] Get improved model by Tuesday, Nov 23rd
-- [ ] Get final model for presentation before Tuesday, Nov 30th
+Algorithms Implemented:
+- REINFORCE
+- A2C (discrete)
+- A2C (continuous)
+- DDPG
+- SAC
 
-<br>
+Environments used:
+- `CartPole-v0`
+- `Pendulum-v1`
+- `Ant-v3`
+- `Humanoid-v3`
+
+## Examples
+
+### Ant-v3
+
+<p float="left">
+  <img src="/assets/ddpg-ant-v3-500k.gif" width="400" height="225" alt="DDPG Ant after 500k environment interactions"/>
+  <img src="/assets/experiments_sac-ant-v3-exp2_videos_sac-ant-v3-478749.gif" width="400" height="225" alt="SAC Ant after 480k environment interactions">
+</p>
+
+### Humanoid-v3:
+
+*Coming soon*
 
 # Installation Instructions
 
@@ -39,20 +53,22 @@ echo export LD_PRELOAD=/usr/lib/x86_64-linux-gnu/libGLEW.so >> ~/.bashrc
 source ~/.bashrc
 ```
 
-## Install Anaconda (or miniconda)
+## Install Python dependencies
 
-`conda` is used to manage dependencies in the development environment. Install Anaconda then use the provided environment file.
+`conda` is used to manage dependencies in the development environment. Create an anaconda environment then use install the following packages:
 
 ```sh
 conda install python==3.8.12
 conda install -c conda-forge gym[all]
-pip3 install mujoco-py>=2.1.2.14
+conda install -c pytorch pytorch
+conda install matplotlib 
+pip3 install mujoco-py>=2.1.2.14 more_itertools tqdm
 ```
 
 ## Verify MuJoCo installation
 
 ```sh
-python3 ./mujoco_render/render_test.py
+python3 ./examples/mujoco_render/render_test.py
 ```
 
 If the installation is successful you should see the model make random movements for several seconds
