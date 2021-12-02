@@ -1,17 +1,18 @@
 # mujoco-2.1-rl-project
-Class project for MATH5001 - Mathematics of Machine Learning
+Implementations of different deep reinforcement learning algorithms in PyTorch using OpenAI Gym and MuJoCo as training environments
 
-Todo:
-- [X] Give installation instructions / Describe environment
-- [X] Give basic example of rendering environment
-- [ ] Decide on deep learning framework / version
-- [ ] Decide on [algorithm(s)](https://spinningup.openai.com/en/latest/spinningup/rl_intro2.html) and make justification(s) 
-- [ ] Find some links / tutorials to guide the project
-- [ ] Get *bad* model by Saturday, Nov 20th
-- [ ] Get improved model by Tuesday, Nov 23rd
-- [ ] Get final model for presentation before Tuesday, Nov 30th
+Algorithms Implemented:
+- REINFORCE
+- A2C (discrete)
+- A2C (continuous)
+- DDPG
+- SAC
 
-<br>
+Environments used:
+-  `CartPole-v0`
+-  `Pendulum-v1`
+-  `Ant-v3`
+-  `Humanoid-v3`
 
 # Installation Instructions
 
@@ -46,13 +47,15 @@ source ~/.bashrc
 ```sh
 conda install python==3.8.12
 conda install -c conda-forge gym[all]
+conda install -c pytorch pytorch
+conda install matplotlib
 pip3 install mujoco-py>=2.1.2.14
 ```
 
 ## Verify MuJoCo installation
 
 ```sh
-python3 ./mujoco_render/render_test.py
+python3 ./examples/mujoco_render/render_test.py
 ```
 
 If the installation is successful you should see the model make random movements for several seconds
