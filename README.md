@@ -9,10 +9,17 @@ Algorithms Implemented:
 - SAC
 
 Environments used:
--  `CartPole-v0`
--  `Pendulum-v1`
--  `Ant-v3`
--  `Humanoid-v3`
+- `CartPole-v0`
+- `Pendulum-v1`
+- `Ant-v3`
+- `Humanoid-v3`
+
+DDPG Ant:
+
+![](assets/ddpg-ant-v3-500k.gif)
+
+SAC Humanoid:
+![]()
 
 # Installation Instructions
 
