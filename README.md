@@ -14,12 +14,18 @@ Environments used:
 - `Ant-v3`
 - `Humanoid-v3`
 
-DDPG Ant:
+## Examples
 
-![](assets/ddpg-ant-v3-500k.gif)
+### Ant-v3
 
-SAC Humanoid:
-![]()
+<p float="left">
+  <img src="/assets/ddpg-ant-v3-500k.gif" width="400" height="225" alt="DDPG Ant after 500k environment interactions"/>
+  <img src="/assets/experiments_sac-ant-v3-exp2_videos_sac-ant-v3-478749.gif" width="400" height="225" alt="SAC Ant after 480k environment interactions">
+</p>
+
+### Humanoid-v3:
+
+*Coming soon*
 
 # Installation Instructions
 
@@ -47,16 +53,16 @@ echo export LD_PRELOAD=/usr/lib/x86_64-linux-gnu/libGLEW.so >> ~/.bashrc
 source ~/.bashrc
 ```
 
-## Install Anaconda (or miniconda)
+## Install Python dependencies
 
-`conda` is used to manage dependencies in the development environment. Install Anaconda then use the provided environment file.
+`conda` is used to manage dependencies in the development environment. Create an anaconda environment then use install the following packages:
 
 ```sh
 conda install python==3.8.12
 conda install -c conda-forge gym[all]
 conda install -c pytorch pytorch
-conda install matplotlib
-pip3 install mujoco-py>=2.1.2.14
+conda install matplotlib 
+pip3 install mujoco-py>=2.1.2.14 more_itertools tqdm
 ```
 
 ## Verify MuJoCo installation
