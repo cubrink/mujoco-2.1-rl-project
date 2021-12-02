@@ -24,8 +24,10 @@ Environments used:
 </p>
 
 ### Humanoid-v3:
-
-*Coming soon*
+<p float="left">
+    <img src="/assets/sac-humanoid-240k.gif" width="400" height="225" alt="SAC Humanoid after 240k environment interactions"/>
+    <img src="/assets/sac-humanoid-1250k.gif" width="400" height="225" alt="SAC Humanoid after 1250k environment interactions"/>
+</p>
 
 # Installation Instructions
 
