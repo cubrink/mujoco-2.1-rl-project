@@ -47,12 +47,11 @@ supervised learning, unsupervised learning, and reinforcement learning (RL). \ci
 
 \section{Testing Environment}
 
-Each of the models were trained using Open AI's Gym library and DeepMind's physics simulator MuJoCo on the Ubuntu
-operating system with Python 3.8. The Gym toolkit implements numerous environments for testing RL, such as the MuJoCo
-physics simulator. MuJoCo stands for {\bf Mu}lti-{\bf Jo}int dynamics with {\bf Co}ntact and was made for applications
-that require fast, accurate physics simulations such as robotics and machine learning [Citation from MuJoCo docs]. Using
-MuJoCo, machine learning algorithms can learn how to control the movement of robotic models, such as a snake, ant, or
-humanoid.
+Each of the models were trained using Open AI's Gym library and DeepMind's physics simulator MuJoCo. The Gym toolkit
+implements numerous environments for testing RL, such as the MuJoCo physics simulator. MuJoCo stands
+for {\bf Mu}lti-{\bf Jo}int dynamics with {\bf Co}ntact and was made for applications that require fast, accurate
+physics simulations such as robotics and machine learning [Citation from MuJoCo docs]. Using MuJoCo, machine learning
+algorithms can learn how to control the movement of robotic models, such as a snake, ant, or humanoid.
 
 Each of Gym's environments adhere to a strict structure that makes it easy to switch testing environments. One of the
 most important parts to keep consistent is the values returned after every step of training [Citation from Gym docs for the following list]:
