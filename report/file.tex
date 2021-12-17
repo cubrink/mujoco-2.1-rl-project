@@ -43,7 +43,7 @@
 
 \section{Introduction}
 
-Recent developments in machine learning have made huge strides in approaching problems that were previously unsolvable with traditional programming methods. In general, machine learning techniques are grouped into three categories:supervised learning, unsupervised learning, and reinforcement learning (RL) \cite{rl_application}. While the first two categories require the whole dataset to train, RL is capable of learning on data as it comes in. This data is formulated as a set of interactions with the agent's environment where each interaction consists of the state of the environment,the action the agent performed, and the resulting state. Thus, agents that use RL learn with a circular process that isa result of the agent's previous actions, known as the agent-environment interaction loop. This complex relationship has given rise to multitudes of algorithms, from remembering a mapping between states and actions to using multiple neural networks to determine the next action.
+Recent developments in machine learning have made huge strides in approaching problems that were previously unsolvable with traditional programming methods. In general, machine learning techniques are grouped into three categories:supervised learning, unsupervised learning, and reinforcement learning (RL) \cite{rl_application}. While the first two categories require the whole dataset to train, RL is capable of learning on data as it comes in. This data is formulated as a set of interactions with the agent's environment where each interaction consists of the state of the environment,the action the agent performed, and the resulting state. Thus, agents that use RL learn with a circular process that is a result of the agent's previous actions, known as the agent-environment interaction loop. This complex relationship has given rise to multitudes of algorithms, from remembering a mapping between states and actions to using multiple neural networks to determine the next action.
 
 Like many other areas of machine learning, RL has been revolutionized by the introduction of deep learning. Reinforcement learning algorithms can now learn how to behave in complex, high dimensional environments, such as learning to play videogames with only the pixels as input or how to control a robot. Because of the new found power of RL, we believe that it will play an influential role in the future of AI.
 
@@ -99,9 +99,14 @@ The \textit{state value function} for policy $\pi$, denoted as $V^\pi$, gives th
 
 However, these functions are still dependent on the return. To avoid this, we can use the Bellman Equations, which defines both $V^\pi$ and $Q^\pi$ in terms of expected values of future states. \cite{deep_rl_survey, spinning_up_intro, sutton2018reinforcement} These equations are given as:
 \begin{align*}
-    V^\pi(s_t)      & = \mathop{\mathbb{E}}_{a_t \sim \pi} [ R(s_t, a_t, s_{t+1}) + \gamma V^\pi(s_{t+1})]              \\
-    Q^\pi(s_t, a_t) & = \mathop{\mathbb{E}}_{a_{t+1} \sim \pi} [ R(s_t, a_t, s_{t+1}) + \gamma Q^\pi(s_{t+1}, a_{t+1})]
+    V^\pi(s)    & = \mathop{\mathop{\mathbb{E}}_{a \sim \pi}}_{s' \sim P} \left[ R(s, a, s') + \gamma V^\pi(s')\right]                  \\
+    Q^\pi(s, a) & = \mathop{\mathbb{E}}_{s' \sim P} \left[ R(s, a, s') + \gamma\mathop{\mathbb{E}}_{a' \sim \pi} [Q^\pi(s', a')]\right] \\
+                & = \mathop{\mathbb{E}}_{s' \sim P}\left [ R(s, a, s') + \gamma V^\pi(s') \right]
 \end{align*}
+\begin{flushleft}
+    Where $P$ is the environment state transition function and $s'$ is the resulting state.
+\end{flushleft}
+
 
 For the agent to maximize $\mathcal{J}(\pi_\theta)$, the agent must learn to improve the policy $\pi_\theta$, where $\theta$ are the parameters for the policy and is normally updated by gradient ascent. Normally this involves using $V^\pi$ or $Q^\pi$ to better approximate the optimal value functions. Commonly, these approximation are done via deep neural networks. The exact details of how the policy and value function(s) are updated is dependent on the reinforcement learning algorithm used. Following is a brief discussion on different types of reinforcement learning algorithms followed by discussions on details of specific algorithms studied in this paper.
 
@@ -153,17 +158,18 @@ Where $(s, a, r, s', d)$ is a transition in the replay buffer $\mathcal{D}$. The
 
 However, using gradient descent the mean squared error of $Q_\phi$ and $y$ is problematic as $y$ is also dependent on $\phi$. As a result, both $Q_\phi$ and $y$ change when $\phi$ is updated, leading to instability. To resolve this, DDPG uses \textit{target networks}, which uses polyak averaging to remove this direct dependency. The target networks, $Q_{\phi'}$ and $\mu_{\theta'}$ have the same structure as their original networks but are updated as follows:
 \begin{align*}
-    \phi'   & \leftarrow \rho \, \phi' + (1 - \rho) \phi     \\
-    \theta' & \leftarrow \rho \, \theta' + (1 - \rho) \theta
+    \phi'   & \leftarrow \tau \, \phi' + (1 - \tau) \phi     \\
+    \theta' & \leftarrow \tau \, \theta' + (1 - \tau) \theta
 \end{align*}
 
-This provides stability to the loss function, therefore $Q_\phi$ is updated using gradient descent on
+\begin{flushleft}
+    For $\tau \in (0, 1)$. This provides stability to the loss function, therefore $Q_\phi$ is updated using gradient descent on
+\end{flushleft}
+
 $$
     \mathcal{L}(\phi, \mathcal{D}) = \mathop{\mathbb{E}}_{(s,a,r,s',d) \sim \mathcal{D}}\left[\left(Q_\phi(s,a) - y\right)^2\right]
 $$
-\begin{flushleft}
-    Where $y$ is the target, which is calculated as:
-\end{flushleft}
+This loss function is called the Mean Square Bellmen Error (MSBE) where $y$ is the target, which is calculated as:
 $$
     y = r + \gamma(1-d)Q_{\phi'}(s', \mu_{\theta'}(s'))
 $$
@@ -177,7 +183,51 @@ Finally, to gain additional benefit from the algorithm off-policy, DDPG uses ano
 
 \subsection{Soft Actor Critic (SAC)}
 
-\blindtext
+The Soft Actor Critic Algorithm is an stochastic off-policy algorithm that uses an actor-critic framework and entropy regularization. This algorithm was originally proposed by \cite{SAC1, SAC2}, additionally, a guided explanation is given by \cite{spinning_up_sac}. SAC can be implement for either discrete or continuous action spaces, however, the details that follow will be for the continuous version.
+
+SAC works by learning a stochastic policy $\pi_\theta$ and two $Q$ functions, $Q_{\phi_1}$ and $Q_{\phi_2}$.  When evaluating the value, the minimum value is taken between $Q_{\phi_1}(s, a)$ and $Q_{\phi_2}(s, a)$. This is called the \textit{clipped double-Q method}. Using this method helps prevent overestimating the value of state action pairs which improves training results.
+
+Similar to DDPG, SAC uses target networks to stabilize the updates using the loss function. Unlike DDPG, SAC only uses target networks for value functions, not for policy. The parameters for the target networks are updated using polyak averaging as shown below:
+\begin{align*}
+    \phi_1' & \leftarrow \tau \, \phi_1' + (1 - \tau) \phi_1 \\
+    \phi_2' & \leftarrow \tau \, \phi_2' + (1 - \tau) \phi_2
+\end{align*}
+
+\begin{flushleft}
+    For $\tau \in (0, 1)$.
+\end{flushleft}
+
+To control exploration of the policy, SAC uses entropy regularization, where entropy is defined as:
+$$
+    H(P) = \mathop{\mathbb{E}}_{x \sim P} \left[- log \, P(x)\right]
+$$
+\begin{flushleft}
+    For any distribution $P$. Roughly speaking, entropy measures how random a distribution is. An entropy of zero is given by a policy where where an action has probability 1. Larger values of entropy indicate more evenly spread probability distribution. The choice of entropy regularization is controlled with the entropy hyperparameter, $\alpha$, where $\alpha \in (0, 1)$. The greater the value of $\alpha$, the more the policy will explore.
+\end{flushleft}
+
+Entropy is introduced in several aspects of the SAC algorithm. The first is in the \textit{entropy regularized double-Q clipped target}, which is calculated as:
+$$
+    y = r + \gamma(1-d)\left(\mathop{min}_{k=1,2}Q_{\phi'_k}(s', a') - \alpha \, log \, \pi_\theta(a' \, | \, s')\right)
+$$
+
+\begin{flushleft}
+    Where $a' \sim \pi_\theta$.
+\end{flushleft}
+
+This is used to calculate the entropy regularized MSBE which is used as the loss function for $Q_{\phi_1}$ and $Q_{\phi_2}$, given by:
+$$
+    \mathcal{L}(\phi_k, \mathcal{D}) = \mathop{\mathbb{E}}_{(s,a,r,s',d) \sim \mathcal{D}}\left[\left(Q_{\phi_k}(s,a) - y\right)^2\right], \enspace k=1,2
+$$
+\begin{flushleft}
+    Where $\mathcal{D}$ is the experience replay buffer.
+\end{flushleft}
+
+The policy $\pi_\theta$ is updated in a way similar to DDPG. The policy is updated by using gradient ascent to maximize the value function. Therefore the loss function for $\pi_\theta$ becomes:
+$$
+    \mathcal{L}(\theta, \mathcal{D}) = \mathop{\mathop{\mathbb{E}}_{s \sim \mathcal{D}}}_{a \sim \pi_\theta} \left[-\left(\mathop{min}_{k=1,2} Q_{\phi'_k}(s, a) - \alpha \, log \, \pi_\theta(a \, | \, s)\right)\right]
+$$
+
+There are two important details regarding sampling action $a$ from $\pi_\theta$ in the SAC algorithm. First, sampling is done from a normal distribution using the \textit{reparameterization method}, this the process of sampling a random number differentiable, allowing for actions to backpropagate the the policy's parameters. The second detail is that the SAC policy squashes the action to finite action space, with $tanh$. This is done as most action spaces have finite bounds while normal distributions have infinite support. By limiting the domain of the action to the action space, the policy is learned more efficiently.
 
 \section{Methodology}
 
