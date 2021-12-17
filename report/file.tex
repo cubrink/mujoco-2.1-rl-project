@@ -66,7 +66,7 @@ Each of the Gym's environments adhere to a strict structure that makes it easy t
 
 The study of reinforcement learning is about training an \textit{agent} to interact with an \textit{environment}. An action by an agent can influence the environment, which may later affect the actions of the agent. For this reason, reinforcement learning algorithms must be able handle a changing environment that is causally influenced by the agent itself.
 
-To formalize the interdependency between the environment and the agent is done with with with the \textit{agent-environment interaction loop}. In which, at time $t$ the environment is fully described by its \textit{state}, $s_t$. Then, an agent makes an \textit{observation} of the environment, $o_t$, where $o_t \subseteq s_t$.\footnote{While the observation and the state are not necessarily equal, reinforcement learning literature frequently refers to an observation as the state itself.} The agent responds to this observation with an \textit{action} $a_t$ and is given a \textit{reward}, $r_t$. After the action is taken, the state of the environment changes with the new state denoted as $s_{t+1}$.
+Formalizing the interdependency between the environment and the agent is done with the \textit{agent-environment interaction loop}. In which, at time $t$ the environment is fully described by its \textit{state}, $s_t$. Then, an agent makes an \textit{observation} of the environment, $o_t$, where $o_t \subseteq s_t$.\footnote{While the observation and the state are not necessarily equal, reinforcement learning literature frequently refers to an observation as the state itself.} The agent responds to this observation with an \textit{action} $a_t$ and is given a \textit{reward}, $r_t$. After the action is taken, the state of the environment changes with the new state denoted as $s_{t+1}$.
 
 An environment state can be represented by a tensor of values describing individual aspects of the environment. The domain of possible observations of the agent is referred to as the \textit{observation space}, which can be either continuous or discrete. Similarly, the domain of all actions that an agent can take is called the \textit{action space} which can also be continuous or discrete. An action, $a_t$, is selected from the action space by agent's \textit{policy}. The policy can select actions either deterministically or stochastically. Typically, deterministic policies are denoted with $a_t = \mu(s_t)$ and stochastic policies are denoted as $a_t \sim \pi(\cdot | s_t)$. \cite{spinning_up_intro}
 
@@ -142,7 +142,38 @@ The second technique is the use of an actor-critic framework. The idea of this f
 
 \subsection{Deep Deterministic Policy Gradient (DDPG)}
 
-\blindtext
+DDPG is an off-policy learning algorithm for continuous action spaces that was proposed by \cite{DDPG}. It learns a Q function and a deterministic policy to select actions and uses a variety of techniques to improve performance and stability of the algorithm. An overview of unique methods used by this algorithm is provided by \cite{spinning_up_ddpg}. One technique that is commonly used by off-policy algorithms is the use a replay buffer. Because off-policy algorithms can learn from actions that did not originate from the current policy, past experiences can be stored in a buffer. Then, during training, a larger sample size can be used to improve training.
+
+To update the function $Q_\phi$, gradient descent is used on $\phi$ to minimize the mean squared error of $Q_\phi(s, a)$ and the \textit{target}, where the target is defined as:
+$$
+    y = r + \gamma(1-d)Q_\phi(s', \mu_\theta(s'))
+$$
+
+Where $(s, a, r, s', d)$ is a transition in the replay buffer $\mathcal{D}$. The resulting state from the action is $s'$ and $d$ is the \textit{done} flag where $d=1$ if $s'$ is a terminal state, $d=0$ otherwise. Additionally, $\mu_\theta$ is the deterministic policy used to select the next action.
+
+However, using gradient descent the mean squared error of $Q_\phi$ and $y$ is problematic as $y$ is also dependent on $\phi$. As a result, both $Q_\phi$ and $y$ change when $\phi$ is updated, leading to instability. To resolve this, DDPG uses \textit{target networks}, which uses polyak averaging to remove this direct dependency. The target networks, $Q_{\phi'}$ and $\mu_{\theta'}$ have the same structure as their original networks but are updated as follows:
+\begin{align*}
+    \phi'   & \leftarrow \rho \, \phi' + (1 - \rho) \phi     \\
+    \theta' & \leftarrow \rho \, \theta' + (1 - \rho) \theta
+\end{align*}
+
+This provides stability to the loss function, therefore $Q_\phi$ is updated using gradient descent on
+$$
+    \mathcal{L}(\phi, \mathcal{D}) = \mathop{\mathbb{E}}_{(s,a,r,s',d) \sim \mathcal{D}}\left[\left(Q_\phi(s,a) - y\right)^2\right]
+$$
+\begin{flushleft}
+    Where $y$ is the target, which is calculated as:
+\end{flushleft}
+$$
+    y = r + \gamma(1-d)Q_{\phi'}(s', \mu_{\theta'}(s'))
+$$
+
+To update the policy, we want to maximize the value function $Q_\phi$ using $\mu_\theta$. To do this, the following loss function is used:
+$$
+    \mathcal{L}(\theta, \mathcal{D}) = \mathop{\mathbb{E}}_{s \sim \mathcal{D}}\left[-Q_\phi(s, \mu_\theta(s))\right]
+$$
+
+Finally, to gain additional benefit from the algorithm off-policy, DDPG uses another technique to encourage exploration during train time. This is done by adding random noise to actions to stray away from the deterministic policy. The original authors uses OU noise, however \cite{spinning_up_ddpg} recommends a zero centered Gaussian distribution which is simpler to implement and still effective.
 
 \subsection{Soft Actor Critic (SAC)}
 
