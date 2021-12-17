@@ -24,7 +24,7 @@
 
 \begin{document}
 
-\title{Deep Reinforcement Learning with the MuJoCo Physics Simulator}
+\title{Using Model-Free Deep Reinforcement Learning Algorithms with the MuJoCo Physics Simulator}
 
 \author{
     \IEEEauthorblockN{Curtis Brinker}
@@ -63,12 +63,12 @@ most important parts to keep consistent is the values returned after every step 
 
 \begin{itemize}
     \item Observation: Represents the current state of the environment, as the agent sees it. In MuJoCo's case, the
-    environment is fully observable and consists of the model's position, velocity, and various forces \cite{gym_source}
+          environment is fully observable and consists of the model's position, velocity, and various forces \cite{gym_source}
     \item Reward: The reward result of the previous action. The reward for the MuJoCo environment is quite simple: if
-    the simulation is still running, give a reward.
+          the simulation is still running, give a reward.
     \item Done: A flag denoting if the environment needs to be reset. Each of the models in MuJoCo define a safe height
-    range that the model is allowed to exist within; if the model leaves that range, the done flag is raised and the
-    model is reset back to the start.
+          range that the model is allowed to exist within; if the model leaves that range, the done flag is raised and the
+          model is reset back to the start.
     \item Info: Some information useful for debugging.
 \end{itemize}
 
@@ -80,7 +80,7 @@ The study of reinforcement learning is about training an \textit{agent} to inter
 
 To formalize the interdependency between the environment and the agent is done with with with the \textit{agent-environment interaction loop}. In which, at time $t$ the environment is fully described by its \textit{state}, $s_t$. Then, an agent makes an \textit{observation} of the environment, $o_t$, where $o_t \subseteq s_t$.\footnote{While the observation and the state are not necessarily equal, reinforcement learning literature frequently refers to an observation as the state itself.} The agent responds to this observation with an \textit{action} $a_t$ and is given a \textit{reward}, $r_t$. After the action is taken, the state of the environment changes with the new state denoted as $s_{t+1}$.
 
-An environment state can be represented by a tensor of values describing individual aspects of the environment. The domain of possible observations of the agent is referred to as the \textit{observation space}, which can be either continuous or discrete. Similarly, the domain of all actions that an agent can take is called the \textit{action space} which can also be continuous or discrete. An action, $a_t$, is selected from the action space by agent's \textit{policy}. The policy can select actions either deterministicly or stochastically. Typically, deterministic policies are denoted with $a_t = \mu(s_t)$ and stochastic policies are denoted as $a_t \sim \pi(\cdot | s_t)$. \cite{spinning_up_intro}
+An environment state can be represented by a tensor of values describing individual aspects of the environment. The domain of possible observations of the agent is referred to as the \textit{observation space}, which can be either continuous or discrete. Similarly, the domain of all actions that an agent can take is called the \textit{action space} which can also be continuous or discrete. An action, $a_t$, is selected from the action space by agent's \textit{policy}. The policy can select actions either deterministically or stochastically. Typically, deterministic policies are denoted with $a_t = \mu(s_t)$ and stochastic policies are denoted as $a_t \sim \pi(\cdot | s_t)$. \cite{spinning_up_intro}
 
 
 
@@ -117,11 +117,40 @@ However, these functions are still dependent on the return. To avoid this, we ca
 
 For the agent to maximize $\mathcal{J}(\pi_\theta)$, the agent must learn to improve the policy $\pi_\theta$, where $\theta$ are the parameters for the policy and is normally updated by gradient ascent. Normally this involves using $V^\pi$ or $Q^\pi$ to better approximate the optimal value functions. Commonly, these approximation are done via deep neural networks. The exact details of how the policy and value function(s) are updated is dependent on the reinforcement learning algorithm used. Following is a brief discussion on different types of reinforcement learning algorithms followed by discussions on details of specific algorithms studied in this paper.
 
+A simplified taxonomy of deep reinforcement learning algorithms is given by \cite{spinning_up_taxonomy}. At the highest level, reinforcement learning algorithms can be split into two categories, \textit{model-based} or \textit{model-free}. Model-based algorithms learn the state transition function, allowing it to predict future states of the environment. Learning the world model has many benefits that can drastically increase the performance of an agent, however, doing so significantly increases the complexity of the algorithms and is outside the scope of this paper. Model-free algorithms do not learn to predict the environment and instead learn other functions to increase the agent's return. Model-free algorithms can be further categorized as using \textit{policy optimization} or \textit{Q-learning}.\footnote{Policy optimization and Q-learning are not mutually exclusive categories.}
+
+Policy optimization algorithms train by optimizing the parameters of the policy $\pi_\theta$. This is normally done learning a value approximator $V_\phi$ and sampling actions taken by the current policy to update parameters accordingly. Because this process requires actions from the current policy, these techniques are considered to be \textit{on-policy}.
+
+Another approach, though not necessarily mutually exclusive, is using Q learning. These algorithms learn an approximator $Q_\theta$ to determine the value of state action pairs. An advantage to this technique is that it can learn from past experiences that were not from the current policy. Algorithms that can learn from experiences of different policies are called \textit{off-policy}. Actions by these algorithms typically are chosen by selecting the action that maximizes $Q_\theta(s, a)$ for the current state $s$.
+
 \subsection{The REINFORCE Algorithm}
+
+One of the simplest forms of policy optimization algorithms is a class of algorithms presented by Williams as REINFORCE. \cite{REINFORCE} The core idea this algorithm is to update the policy by sampling trajectories from the policy. Once a sample has been taken from the current policy, the policy $\pi_\theta$ and value approximator $V_\phi$ can be updated. There is some flexibility in how the parameters are updated, though \cite{spinning_up_policy_optimization} provides some examples of frequently used techniques. The policy is updated using gradient ascent where the gradient is given by:
+$$
+    \nabla_\theta\mathcal{J(\pi_\theta)} = \mathop{\mathbb{E}}_{\tau \sim \pi_\theta} \left[\sum_{t=0}^{T}\nabla_\theta \, log \, \pi_\theta(a_t | s_t) \, \Phi_t \right]
+$$
+\begin{flushleft}
+    Where $\Phi_t$ is any function that is independent of $\theta$.
+\end{flushleft}
+
+
+To update the value approximator parameters $\phi$, it is common to use gradient descent on a loss such as mean squared error on the value approximator and the reward-to-go return.
+$$
+    \mathcal{L}(\phi) = \mathop{\mathbb{E}}_{\tau \sim \pi_\theta} \left[\left(V_\phi(s_t) - R_t(\tau)\right)^2\right]
+$$
 
 \subsection{Advantage Actor Critic (A2C)}
 
-\blindtext
+The advantage actor critic is an on-policy algorithm based on the REINFORCE algorithm. A2C was first proposed by \cite{A2C} along with an asynchronous variant called A3C. The details about the asynchronous version of the algorithm is not pertinent to this paper and will not be discussed. As a whole, there are two main techniques used to improve the performance of this algorithm.
+
+The first technique is the use of the advantage function, $A^{\pi_\theta}(s_t, a_t)$ as $\Phi_t$. The advantage function is defined as:
+$$
+    A^{\pi_\theta}(s_t, a_t) = Q^{\pi_\theta}(s_t, a_t) - V^{\pi_\theta}(s_t, a_t)
+$$
+
+It should be noted that $\Phi_t$ must be independent of $\theta$ and by consequence $a_t$. However, \cite{spinning_up_policy_optimization} provides a proof that $A^{\pi_\theta}(s_t, a_t)$ can be written it terms of $s_t$ only. The advantage can be thought of as quantifying how much better an action in a given state is than average. Negative values signify that the action was less than expected value for the given state, and positive signifies that it was better. Mathematically, the advantage function useful as subtracting by $V^{\pi_\theta}(s_t)$ reduces the variance in the policy gradient leading to more stable learning.
+
+The second technique is the use of an actor-critic framework. The idea of this framework it to separate the concerns of learning different aspects of training. The actor is tasked with learning the policy that will interact with the environment. The critic is tasked with learning the value function that it will use to criticize the actor's actions. \cite{deepmind_slides_9}
 
 \subsection{Deep Deterministic Policy Gradient (DDPG)}
 
@@ -156,9 +185,9 @@ The hyperparameters for each algorithm were as follows:
 \begin{itemize}
     \item A2C: Learning rate of $3e^{-4}$ and $\gamma = 0.99$.
     \item DDPG: Update freq. of 64 steps, update threshold of 4096 steps, batch size of 128, learning rate of $1e^{-3}$,
-    $\gamma = 0.99$, $\tau = 0.995$, and the noise distribution was Normal with a standard deviation of 0.1.
+          $\gamma = 0.99$, $\tau = 0.995$, and the noise distribution was Normal with a standard deviation of 0.1.
     \item SAC: Update freq. of 64 steps, 64 updates per update step, an update threshold of 4096 steps, batch size of
-    128, $\alpha = 0.5$, learning rate of $5e^{-4}$, $\gamma = 0.99$, $\tau = 0.995$, and an $alpha$ decay of 1.
+          128, $\alpha = 0.5$, learning rate of $5e^{-4}$, $\gamma = 0.99$, $\tau = 0.995$, and an $alpha$ decay of 1.
 \end{itemize}
 Each of those parameters were chosen because they resulted in the best performing model.
 
