@@ -68,7 +68,7 @@ The study of reinforcement learning is about training an \textit{agent} to inter
 
 Formalizing the interdependency between the environment and the agent is done with the \textit{agent-environment interaction loop}. In which, at time $t$ the environment is fully described by its \textit{state}, $s_t$. Then, an agent makes an \textit{observation} of the environment, $o_t$, where $o_t \subseteq s_t$.\footnote{While the observation and the state are not necessarily equal, reinforcement learning literature frequently refers to an observation as the state itself.} The agent responds to this observation with an \textit{action} $a_t$ and is given a \textit{reward}, $r_t$. After the action is taken, the state of the environment changes with the new state denoted as $s_{t+1}$.
 
-An environment state can be represented by a tensor of values describing individual aspects of the environment. The domain of possible observations of the agent is referred to as the \textit{observation space}, which can be either continuous or discrete. Similarly, the domain of all actions that an agent can take is called the \textit{action space} which can also be continuous or discrete. An action, $a_t$, is selected from the action space by agent's \textit{policy}. The policy can select actions either deterministically or stochastically. Typically, deterministic policies are denoted with $a_t = \mu(s_t)$ and stochastic policies are denoted as $a_t \sim \pi(\cdot | s_t)$. \cite{spinning_up_intro}
+An environment state can be represented by a tensor of values describing individual aspects of the environment. The domain of possible observations of the agent is referred to as the \textit{observation space}, which can be either continuous or discrete. Similarly, the domain of all actions that an agent can take is called the \textit{action space} which can also be continuous or discrete. An action, $a_t$, is selected from the action space by agent's \textit{policy}. The policy can select actions either deterministically or stochastically. Typically, deterministic policies are denoted with $a_t = \mu(s_t)$ and stochastic policies are denoted as $a_t \sim \pi(\cdot | s_t)$ \cite{spinning_up_intro}.
 
 
 
@@ -118,7 +118,7 @@ Another approach, though not necessarily mutually exclusive, is using Q learning
 
 \subsection{The REINFORCE Algorithm}
 
-One of the simplest forms of policy optimization algorithms is a class of algorithms presented by Williams as REINFORCE. \cite{REINFORCE} The core idea this algorithm is to update the policy by sampling trajectories from the policy. Once a sample has been taken from the current policy, the policy $\pi_\theta$ and value approximator $V_\phi$ can be updated. There is some flexibility in how the parameters are updated, though \cite{spinning_up_policy_optimization} provides some examples of frequently used techniques. The policy is updated using gradient ascent where the gradient is given by:
+One of the simplest forms of policy optimization algorithms is a class of algorithms presented by Williams as REINFORCE \cite{REINFORCE}. The core idea this algorithm is to update the policy by sampling trajectories from the policy. Once a sample has been taken from the current policy, the policy $\pi_\theta$ and value approximator $V_\phi$ can be updated. There is some flexibility in how the parameters are updated, though \cite{spinning_up_policy_optimization} provides some examples of frequently used techniques. The policy is updated using gradient ascent where the gradient is given by:
 $$
     \nabla_\theta\mathcal{J(\pi_\theta)} = \mathop{\mathbb{E}}_{\tau \sim \pi_\theta} \left[\sum_{t=0}^{T}\nabla_\theta \, log \, \pi_\theta(a_t | s_t) \, \Phi_t \right]
 $$
@@ -141,9 +141,9 @@ $$
     A^{\pi_\theta}(s_t, a_t) = Q^{\pi_\theta}(s_t, a_t) - V^{\pi_\theta}(s_t, a_t)
 $$
 
-It should be noted that $\Phi_t$ must be independent of $\theta$ and by consequence $a_t$. However, \cite{spinning_up_policy_optimization} provides a proof that $A^{\pi_\theta}(s_t, a_t)$ can be written it terms of $s_t$ only. The advantage can be thought of as quantifying how much better an action in a given state is than average. Negative values signify that the action was less than expected value for the given state, and positive signifies that it was better. Mathematically, the advantage function useful as subtracting by $V^{\pi_\theta}(s_t)$ reduces the variance in the policy gradient leading to more stable learning.
+It should be noted that $\Phi_t$ must be independent of $\theta$ and by consequence $a_t$. However, \cite{spinning_up_policy_optimization} provides a proof that $A^{\pi_\theta}(s_t, a_t)$ can be written it terms of $s_t$ only. The advantage can be thought of as quantifying how much better an action in a given state is than average. Negative values signify that the action was less than the expected value for the given state, and positive signifies that it was better. Mathematically, the advantage function is useful as subtracting by $V^{\pi_\theta}(s_t)$ reduces the variance in the policy gradient leading to more stable learning.
 
-The second technique is the use of an actor-critic framework. The idea of this framework it to separate the concerns of learning different aspects of training. The actor is tasked with learning the policy that will interact with the environment. The critic is tasked with learning the value function that it will use to criticize the actor's actions. \cite{deepmind_slides_9}
+The second technique is the use of an actor-critic framework. The idea of this framework it to separate the concerns of learning different aspects of training. The actor is tasked with learning the policy that will interact with the environment. The critic is tasked with learning the value function that it will use to criticize the actor's actions \cite{deepmind_slides_9}.
 
 \subsection{Deep Deterministic Policy Gradient (DDPG)}
 
@@ -156,7 +156,7 @@ $$
 
 Where $(s, a, r, s', d)$ is a transition in the replay buffer $\mathcal{D}$. The resulting state from the action is $s'$ and $d$ is the \textit{done} flag where $d=1$ if $s'$ is a terminal state, $d=0$ otherwise. Additionally, $\mu_\theta$ is the deterministic policy used to select the next action.
 
-However, using gradient descent the mean squared error of $Q_\phi$ and $y$ is problematic as $y$ is also dependent on $\phi$. As a result, both $Q_\phi$ and $y$ change when $\phi$ is updated, leading to instability. To resolve this, DDPG uses \textit{target networks}, which uses polyak averaging to remove this direct dependency. The target networks, $Q_{\phi'}$ and $\mu_{\theta'}$ have the same structure as their original networks but are updated as follows:
+However, using gradient descent on the mean squared error of $Q_\phi$ and $y$ is problematic as $y$ is also dependent on $\phi$. As a result, both $Q_\phi$ and $y$ change when $\phi$ is updated, leading to instability. To resolve this, DDPG uses \textit{target networks}, which uses polyak averaging to remove this direct dependency. The target networks, $Q_{\phi'}$ and $\mu_{\theta'}$ have the same structure as their original networks but are updated as follows:
 \begin{align*}
     \phi'   & \leftarrow \tau \, \phi' + (1 - \tau) \phi     \\
     \theta' & \leftarrow \tau \, \theta' + (1 - \tau) \theta
@@ -183,7 +183,7 @@ Finally, to gain additional benefit from the algorithm off-policy, DDPG uses ano
 
 \subsection{Soft Actor Critic (SAC)}
 
-The Soft Actor Critic Algorithm is an stochastic off-policy algorithm that uses an actor-critic framework and entropy regularization. This algorithm was originally proposed by \cite{SAC1, SAC2}, additionally, a guided explanation is given by \cite{spinning_up_sac}. SAC can be implement for either discrete or continuous action spaces, however, the details that follow will be for the continuous version.
+The Soft Actor Critic Algorithm is an stochastic off-policy algorithm that uses an actor-critic framework and entropy regularization. This algorithm was originally proposed by \cite{SAC1, SAC2}, additionally, a guided explanation is given by \cite{spinning_up_sac}. SAC can be implemented for either discrete or continuous action spaces, however, the details that follow will be tailored for the continuous version.
 
 SAC works by learning a stochastic policy $\pi_\theta$ and two $Q$ functions, $Q_{\phi_1}$ and $Q_{\phi_2}$.  When evaluating the value, the minimum value is taken between $Q_{\phi_1}(s, a)$ and $Q_{\phi_2}(s, a)$. This is called the \textit{clipped double-Q method}. Using this method helps prevent overestimating the value of state action pairs which improves training results.
 
@@ -227,7 +227,7 @@ $$
     \mathcal{L}(\theta, \mathcal{D}) = \mathop{\mathop{\mathbb{E}}_{s \sim \mathcal{D}}}_{a \sim \pi_\theta} \left[-\left(\mathop{min}_{k=1,2} Q_{\phi'_k}(s, a) - \alpha \, log \, \pi_\theta(a \, | \, s)\right)\right]
 $$
 
-There are two important details regarding sampling action $a$ from $\pi_\theta$ in the SAC algorithm. First, sampling is done from a normal distribution using the \textit{reparameterization method}, this the process of sampling a random number differentiable, allowing for actions to backpropagate the the policy's parameters. The second detail is that the SAC policy squashes the action to finite action space, with $tanh$. This is done as most action spaces have finite bounds while normal distributions have infinite support. By limiting the domain of the action to the action space, the policy is learned more efficiently.
+There are two important details regarding sampling action $a$ from $\pi_\theta$ in the SAC algorithm. First, sampling is done from a normal distribution using the \textit{reparameterization method}. This makes the randomly sampled number differentiable, allowing for actions to backpropagate through the policy's parameters. The second detail is that the SAC policy squashes the action into a finite action space, with $tanh$. This is done as most action spaces have finite bounds while normal distributions have infinite support. By limiting the domain of the action to the action space, the policy is learned more efficiently.
 
 \section{Methodology}
 
@@ -337,7 +337,8 @@ The humanoid was chosen because it is the most complex 3D walker and showcased t
 \section{Conclusions and Future Work}
 
 Learning to walk is a challenging problem; multiple limbs have to move in a coordinated fashion just to keep balance, adding movement on top of that is a problem that is potentially unsolvable with conventional programming methods. Using Reinforcement learning algorithms, the agent learned, not only, to move a complex model in a 3D environment, but in the case of Soft Actor Critic, to leap its way to success. By implementing and training these algorithms, we are also leaping into success: we now have a solid foundation to begin building new experiences in Reinforcement Learning. We learned the basics of RL like the value and policy functions, policy gradients, and a dictionary's worth of RL vocabulary, all of which will propel us into the future of RL in research and industry.
-To continue learning about RL with MuJoCo, we can implement more algorithms or train with different kinds of models, a bicycle perhaps? But reinforcement learning has a much broader scope than just MuJoCo, we could move on to Multiagent learning for games like Chess \cite{multiagent}, learning how to play complex single play video games like Dark Souls, or even self driving \cite{self_driving}. Our new foundational knowledge of RL leaves us well equipped to keep up with research and potentially contribute some day our selves.
+
+To continue learning about RL with MuJoCo, we can implement more algorithms or train with different kinds of models, a bicycle perhaps? But reinforcement learning has a much broader scope than just MuJoCo, we could move on to Multiagent learning for games like Chess \cite{multiagent}, learning how to play complex single play video games like Dark Souls, or even self driving \cite{self_driving}. Our new foundational knowledge of RL leaves us well equipped to keep up with research and potentially contribute to it ourselves some day.
 
 \bibliography{references}
 \bibliographystyle{ieeetran}
