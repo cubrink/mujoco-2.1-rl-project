@@ -47,7 +47,7 @@ Recent developments in machine learning have made huge strides in approaching pr
 
 Like many other areas of machine learning, RL has been revolutionized by the introduction of deep learning. Reinforcement learning algorithms can now learn how to behave in complex, high dimensional environments, such as learning to play videogames with only the pixels as input or how to control a robot. Because of the new found power of RL, we believe that it will play an influential role in the future of AI.
 
-To get experience in this exciting field, we implemented some model-free RL algorithms and taught them how to walk with the MuJoCo physics simulator.
+To get experience in this exciting field, we implemented some model-free RL algorithms and taught them how to walk in a 3D environment with the MuJoCo physics simulator.
 
 \section{Testing Environment}
 
@@ -238,6 +238,7 @@ The humanoid was chosen because it is the most complex 3D walker and showcased t
 \section{Results}
 
 <Why does loss not matter; only need to see that the reward is trending upward>
+<in the following sections be sure to mention why SAC is impressive>
 
 \blindtext
 
@@ -258,6 +259,7 @@ The humanoid was chosen because it is the most complex 3D walker and showcased t
 
 <SAC jumped, DDPG walked>
 <SAC reward increase is steeper than DDPG's>
+<mention SAC jumping/leaping>
 
 \begin{figure}
     \includegraphics[width=0.45\textwidth, height=5cm]{sac-ant}
@@ -282,7 +284,10 @@ The humanoid was chosen because it is the most complex 3D walker and showcased t
 
 \blindtext
 
-\section{Future Work and Conclusions}
+\section{Conclusions and Future Work}
+
+Learning to walk is a challenging problem; multiple limbs have to move in a coordinated fashion just to keep balance, adding movement on top of that is a problem that is potentially unsolvable with conventional programming methods. Using Reinforcement learning algorithms, the agent learned, not only, to move a complex model in a 3D environment, but in the case of Soft Actor Critic, to leap its way to success. By implementing and training these algorithms, we are also leaping into success: we now have a solid foundation to begin building new experiences in Reinforcement Learning. We learned the basics of RL like the value and policy functions, policy gradients, and a dictionary's worth of RL vocabulary, all of which will propel us into the future of RL in research and industry.
+To continue learning about RL with MuJoCo, we can implement more algorithms or train with different kinds of models, a bicycle perhaps? But reinforcement learning has a much broader scope than just MuJoCo, we could move on to Multiagent learning for games like Chess \cite{multiagent}, learning how to play complex single play video games like Dark Souls, or even self driving \cite{self_driving}. Our new foundational knowledge of RL leaves us well equipped to keep up with research and potentially contribute some day our selves.
 
 \blindtext[2]
 
