@@ -287,11 +287,9 @@ The humanoid was chosen because it is the most complex 3D walker and showcased t
 
 \section{Results}
 
-<Why does loss not matter; only need to see that the reward is trending upward>
-<in the following sections be sure to mention why SAC is impressive>
-<link to the github experiments folder to see videos>
+The following sections discuss each algorithms' results for each of the environments, including graphs of the reward history and various loss values. As \cite{spinning_up_intro} notes, unlike other machine learning techniques, supervised learning for example, the loss function is defined on the most recent policy, so it is only relevant for calculating the descent gradient \textit{for that specific version of the policy}. This means that minimizing the loss function is not guaranteed to improve the expected return, and may in fact do the opposite. Essentially, for RL the loss values mean nothing, but their graphs were included here for posterity's sake.
 
-\blindtext
+To see videos of the agents' performance in some of the following environments see \cite{agent_videos}.
 
 \subsection{CartPole-v0}
 
@@ -318,7 +316,7 @@ The humanoid was chosen because it is the most complex 3D walker and showcased t
     \caption{DDPG in the Ant-v3 environment}
 \end{figure}
 
-While each of the models were able to move the Ant model, they differed in the degree of "intelligence" they showed. For example, A2C mostly flailed the legs around in vague walking motions which caused the model to spin around and jump into the air landing on its back. DDPG, on the otherhand, used the left and right legs to walk, using the front and rear legs for steering. Using this method it was able to achieve quite the distance. But SAC managed to top even that: using the same locomotion scheme as DDPG, the model expertly leapt through the air and even reached the edge of the floor. This is reflected in the performance graphs, reward history for SAC increases at a steeper rate than it does for DDPG.
+While each of the models were able to move the Ant model, they differed in the degree of "intelligence" they showed. For example, A2C mostly flailed the legs around in vague walking motions which caused the model to spin around and jump into the air landing on its back. DDPG, on the otherhand, used the left and right legs to walk, using the front and rear legs for steering. Using this method it was able to achieve quite the distance. But SAC managed to top even that; using the same locomotion scheme as DDPG, the model expertly leapt through the air and even reached the edge of the floor. This is reflected in the performance graphs: the reward history for SAC increases at a steeper rate than it does for DDPG.
 
 \subsection{Humanoid-v3}
 
@@ -335,7 +333,7 @@ Unfortunately, the training for SAC took so long that the other algorithms were 
 
 Learning to walk is a challenging problem; multiple limbs have to move in a coordinated fashion just to keep balance, adding movement on top of that is a problem that is potentially unsolvable with conventional programming methods. Using Reinforcement learning algorithms, the agent learned, not only, to move a complex model in a 3D environment, but in the case of Soft Actor Critic, to leap its way to success. By implementing and training these algorithms, we are also leaping into success: we now have a solid foundation to begin building new experiences in Reinforcement Learning. We learned the basics of RL like the value and policy functions, policy gradients, and a dictionary's worth of RL vocabulary, all of which will propel us into the future of RL in research and industry.
 
-To continue learning about RL with MuJoCo, we can implement more algorithms or train with different kinds of models, a bicycle perhaps? But reinforcement learning has a much broader scope than just MuJoCo, we could move on to Multiagent learning for games like Chess \cite{multiagent}, learning how to play complex single play video games like Dark Souls, or even self driving \cite{self_driving}. Our new foundational knowledge of RL leaves us well equipped to keep up with research and potentially contribute to it ourselves some day.
+To continue learning about RL with MuJoCo, we can implement more algorithms or train with different kinds of models, a bicycle perhaps? But reinforcement learning has a much broader scope than just MuJoCo, we could move on to Multiagent Learning for games like Chess \cite{multiagent}, learning how to play complex single player video games like Dark Souls, or even self driving \cite{self_driving}. Our new foundational knowledge of RL leaves us well equipped to keep up with research and potentially contribute to it ourselves some day.
 
 \bibliography{references}
 \bibliographystyle{ieeetran}
