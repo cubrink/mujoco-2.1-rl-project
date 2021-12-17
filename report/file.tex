@@ -20,6 +20,7 @@
 \definecolor{light-gray}{gray}{0.95}
 \newcommand{\size}[2]{{\fontsize{#1}{0}\selectfont#2}}
 \newcommand{\code}[1]{\colorbox{light-gray}{\size{8}{\texttt{#1}}}}
+\newcommand{\monospace}[1]{\size{8}{\texttt{#1}}}
 
 \def\BibTeX{{\rm B\kern-.05em{\sc i\kern-.025em b}\kern-.08em
     T\kern-.1667em\lower.7ex\hbox{E}\kern-.125emX}}
@@ -43,23 +44,37 @@
 
 \section{Introduction}
 
-Recent developments in machine learning have made huge strides in approaching problems that were previously unsolvable with traditional programming methods. In general, machine learning techniques are grouped into three categories:supervised learning, unsupervised learning, and reinforcement learning (RL) \cite{rl_application}. While the first two categories require the whole dataset to train, RL is capable of learning on data as it comes in. This data is formulated as a set of interactions with the agent's environment where each interaction consists of the state of the environment,the action the agent performed, and the resulting state. Thus, agents that use RL learn with a circular process that is a result of the agent's previous actions, known as the agent-environment interaction loop. This complex relationship has given rise to multitudes of algorithms, from remembering a mapping between states and actions to using multiple neural networks to determine the next action.
+Recent developments in machine learning have made huge strides in approaching problems that were previously unsolvable with traditional programming methods. In general, machine learning techniques are grouped into three categories: supervised learning, unsupervised learning, and reinforcement learning (RL). The first two categories train on a dataset with constant values. RL is unique in the fact that the data it trains on frequently changes due to the strong causal interdependency between the agent and the environment. As the training data is consistently changing, RL algorithms must be able to learn in real time, called online learning \cite{rl_application}.
 
-Like many other areas of machine learning, RL has been revolutionized by the introduction of deep learning. Reinforcement learning algorithms can now learn how to behave in complex, high dimensional environments, such as learning to play videogames with only the pixels as input or how to control a robot. Because of the new found power of RL, we believe that it will play an influential role in the future of AI.
+This paradigm of machine learning aligns well with several real life applications and as a result has led to new state-of-the-art algorithms to solve them.  Some examples may include DeepMind's AlphaZero, which became the best Go player. Another example are RL algorithms that have achieved superhuman performance in a variety of Atari games using only visual inputs. However, RL algorithms can excel in more than just games, RL agents have been created to control robotics, design machine learning algorithms and much more \cite{deep_rl_survey}.
 
-To get experience in this exciting field, we implemented some model-free RL algorithms and taught them how to walk in a 3D environment with the MuJoCo physics simulator.
+RL is capable of learning on data as it comes in. This data is formulated as a set of interactions with the agent's environment where each interaction consists of the state of the environment,the action the agent performed, and the resulting state. Thus, agents that use RL learn with a circular process that is a result of the agent's previous actions, known as the agent-environment interaction loop. This complex relationship has given rise to multitudes of algorithms, from remembering a mapping between states and actions to using multiple neural networks to determine the next action .
+
+In this paper we aim to give an introduction to the mathematics used in deep reinforcement learning by examining several famous deep RL algorithms. By learning the mathematics, we aim to learn the core principles that the field of RL uses, along with special tricks and techniques that are used to improve performance. Specifically, this paper looks to study and implement the following algorithms:
+\begin{itemize}
+    \item REINFORCE
+    \item A2C
+    \item DDPG
+    \item SAC
+\end{itemize}
+
+To test the performance of these algorithms, we trained models and recorded the improvement over time. The most intensive tests were performed in the MuJoCo simulator where agents were trained to walk in a 3D simulation. All code, models and figures from these tests are available at the project repo.\footnote{\label{repo}https://github.com/cubrink/mujoco-2.1-rl-project}
 
 \section{Testing Environment}
 
-Each of the models were trained using Open AI's Gym library and DeepMind's physics simulator MuJoCo. The Gym toolkit implements numerous environments for testing RL, such as the MuJoCo physics simulator. MuJoCo stands for {\bf Mu}lti-{\bf Jo}int dynamics with {\bf Co}ntact and was made for applications that require fast, accurate physics simulations such as robotics and machine learning \cite{mujoco_docs}. Using MuJoCo, machine learning algorithms can learn how to control the movement of robotic models, such as a snake, ant, or humanoid.
+All algorithms were written and tested on a Linux system running Ubuntu 20.04. The system had the MuJoCo 2.1 installed according to the instructions provided in the project repo.\footnotemark[\ref{repo}] MuJoCo stands for {\bf Mu}lti-{\bf Jo}int dynamics with {\bf Co}ntact and was made for applications that require fast, accurate physics simulations such as robotics and machine learning \cite{mujoco_docs}. Using MuJoCo, machine learning algorithms can learn how to control the movement of robotic models, such as a snake, ant, or humanoid.
 
-Each of the Gym's environments adhere to a strict structure that makes it easy to switch between environments. One of the most important parts to keep consistent are the values returned after every step of training. Each environment returns the following four values \cite{gym_docs}:
+All RL algorithms were written using Python 3.8 and the PyTorch library. The algorithms were written using the OpenAI \code{gym} interface. This interface was used as it is a standardized way to interact with RL algorithms and the \code{gym} library has native support for MuJoCo. This interface is described in the documentation \cite{gym_docs}. An overview of this interface is given below:
 
 \begin{itemize}
-    \item Observation: Represents the current state of the environment, as the agent sees it. In MuJoCo's case, the          environment is fully observable and consists of the model's position, velocity, and various forces \cite{gym_source}
-    \item Reward: The reward result of the previous action. The reward for the MuJoCo environment depends on a          number of things and is unique for each model.
-    \item Done: A flag denoting if the environment needs to be reset. Each of the models in MuJoCo define a safe height range that the model is allowed to exist within; if the model leaves that range, the done flag is raised and the model is reset back to the start.
-    \item Info: Some information useful for debugging.
+    \item \code{reset()}: Resets the environment to an initial state
+    \item \code{step()}: Used to update the environment and returns the following:
+          \begin{itemize}
+              \item An observation of the environment
+              \item The reward from the most recent step
+              \item A done flag, marking a state as a terminal state
+              \item An info object which has a log of the internal details of the environment step
+          \end{itemize}
 \end{itemize}
 
 \section{Background}
