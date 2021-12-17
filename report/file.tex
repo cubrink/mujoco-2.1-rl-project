@@ -186,7 +186,7 @@ Each of the algorithms were implemented on Ubuntu 20.04 with Python 3.8 using th
 The hyperparameters for each algorithm were as follows:
 \begin{itemize}
     \item A2C: Learning rate of $3e^{-4}$ and $\gamma = 0.99$.
-    \item DDPG: Update freq. of 64 steps, update threshold of 4096 steps, batch size of 128, learning rate of $1e^{-3}$, $\gamma = 0.99$, $\tau = 0.995$, and the noise distribution was Gaussian with a standard deviation of 0.1 (this differs from \cite{DDPG} which used OU noise due to a recommentation by \cite{spinning_up_ddpg} to use the easier to implement Gaussian noise).
+    \item DDPG: Update freq. of 64 steps, update threshold of 4096 steps, batch size of 128, learning rate of $1e^{-3}$, $\gamma = 0.99$, $\tau = 0.995$, and the noise distribution was Gaussian with a standard deviation of 0.1 (\cite{DDPG} used OU noise, but \cite{spinning_up_ddpg} recommended using the easier to implement Gaussian noise).
     \item SAC: Update freq. of 64 steps, 64 updates per update step, an update threshold of 4096 steps, batch size of 128, $\alpha = 0.5$, learning rate of $5e^{-4}$, $\gamma = 0.99$, $\tau = 0.995$, and an $\alpha$ decay of 1.
 \end{itemize}
 Each of those parameters were chosen because they resulted in the best performing model.
