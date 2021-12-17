@@ -289,6 +289,7 @@ The humanoid was chosen because it is the most complex 3D walker and showcased t
 
 <Why does loss not matter; only need to see that the reward is trending upward>
 <in the following sections be sure to mention why SAC is impressive>
+<link to the github experiments folder to see videos>
 
 \blindtext
 
@@ -307,10 +308,6 @@ The humanoid was chosen because it is the most complex 3D walker and showcased t
 
 \subsection{Ant-v3}
 
-<SAC jumped, DDPG walked>
-<SAC reward increase is steeper than DDPG's>
-<mention SAC jumping/leaping>
-
 \begin{figure}
     \includegraphics[width=0.45\textwidth, height=5cm]{sac-ant}
     \caption{SAC in the Ant-v3 environment}
@@ -321,18 +318,18 @@ The humanoid was chosen because it is the most complex 3D walker and showcased t
     \caption{DDPG in the Ant-v3 environment}
 \end{figure}
 
-\blindtext
+While each of the models were able to move the Ant model, they differed in the degree of "intelligence" they showed. For example, A2C mostly flailed the legs around in vague walking motions which caused the model to spin around and jump into the air landing on its back. DDPG, on the otherhand, used the left and right legs to walk, using the front and rear legs for steering. Using this method it was able to achieve quite the distance. But SAC managed to top even that: using the same locomotion scheme as DDPG, the model expertly leapt through the air and even reached the edge of the floor. This is reflected in the performance graphs, reward history for SAC increases at a steeper rate than it does for DDPG.
 
 \subsection{Humanoid-v3}
-
-<model shuffled along instead of taking steps>
 
 \begin{figure}
     \includegraphics[width=0.45\textwidth, height=5cm]{sac-humanoid}
     \caption{SAC in the Humanoid-v3 environment}
 \end{figure}
 
-\blindtext
+Since SAC's performance on the Ant model was so impressive, it was the first to train with the Humanoid model. As shown in the performance graph, it quickly learned how to walk using the arms for balance. After that initial hurdle, it refined its balance technique an opted for a slow and steady strategy by shuffling the feet along the floor. \textit {The SAC Shuffle} allowed the model to walk far into the distance, effectively solving the environment.
+
+Unfortunately, the training for SAC took so long that the other algorithms were not able to be tested with this model.
 
 \section{Conclusions and Future Work}
 
