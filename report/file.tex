@@ -27,7 +27,7 @@
 
 \begin{document}
 
-\title{Using Model-Free Deep Reinforcement Learning Algorithms with the MuJoCo Physics Simulator}
+\title{Model-Free Deep Reinforcement Learning Algorithms in the MuJoCo Physics Simulator}
 
 \author{
     \IEEEauthorblockN{Curtis Brinker}
@@ -39,7 +39,7 @@
 \maketitle
 
 \begin{abstract}
-    \blindtext
+    Deep reinforcement learning is a field that has show rapid growth in the recent years. These advances have made progress in solving problems that were previously considered unapproachable such as the game Go or self driving vehicles. This paper looks to provide an introduction to deep reinforcement learning by examining several notable algorithms in detail. These algorithms are then implemented and tested in the MuJoCo physics simulation to provide quantitative and qualitative comparisons of the performance for each of the different algorithms.
 \end{abstract}
 
 \section{Introduction}
@@ -246,27 +246,35 @@ There are two important details regarding sampling action $a$ from $\pi_\theta$ 
 
 \section{Methodology}
 
-Each of the algorithms were implemented on Ubuntu 20.04 with Python 3.8 using the PyTorch library. We used PyTorch because we had previous experience with it and liked how flexible it is compared to other options. To train the models, we used the previously mentioned Gym library. To verify that the implementation of each of the algorithms worked correctly, they were trained in the CartPole and Pendulum environments. For training towards the goal, the Ant-v3 and Humanoid-v3 MuJoCo models were used.
+Testing of the effectiveness of RL algorithms was done sequentially and in multiple stages, increasing in difficulty. The first tests were algorithms that used a discrete action spaces, REINFORCE and A2C. The tests were performed in the \code{CartPole-v0} environment. These tests were qualitative in nature, with the goal seeing that the simplest algorithms were properly learning.
+
+The second group of tests focused on testing the implementation of algorithms with a continuous action spaces, DDPG and SAC. The tests were performed in the \code{Pendulum-v1} environment. These tests were quantitative in nature and recorded the improvement of the agent over time.
+
+The third group of tests focused on testing the performance of algorithms with a continuous action spaces. The algorithms tested were A2C, DDPG and SAC. The tests were performed in the MuJoCo \code{Ant-v3} environment. These tests were quantitative in nature and recorded the improvement of the agent over time.
+
+The fourth test took the best performing algorithm from the third group of tests and subjected it to a more challenging environment, MuJoCo's \code{Humanoid-v3} environment. This environment has a larger observation and action space than the \code{Ant-v3} environment. This test was quantitative in nature and recorded the improvement of the agent over time.
+
 
 The hyperparameters for each algorithm were as follows:
 \begin{itemize}
-    \item A2C: Learning rate of $3e^{-4}$ and $\gamma = 0.99$.
-    \item DDPG: Update freq. of 64 steps, update threshold of 4096 steps, batch size of 128, learning rate of $1e^{-3}$, $\gamma = 0.99$, $\tau = 0.995$, and the noise distribution was Gaussian with a standard deviation of 0.1 (\cite{DDPG} used OU noise, but \cite{spinning_up_ddpg} recommended using the easier to implement Gaussian noise).
-    \item SAC: Update freq. of 64 steps, 64 updates per update step, an update threshold of 4096 steps, batch size of 128, $\alpha = 0.5$, learning rate of $5e^{-4}$, $\gamma = 0.99$, $\tau = 0.995$, and an $\alpha$ decay of 1.
+    \item REINFORCE: Train for a maximum of 5000 episodes. Update at end of each episode. Learning rate of $3\text{e-}4$.
+    \item A2C: Learning rate of $3\text{e-}4$ and $\gamma = 0.99$.
+    \item DDPG: Update freq. of 64 steps, update threshold of 4096 steps, batch size of 128, learning rate of $1\text{e-}3$, $\gamma = 0.99$, $\tau = 0.995$, and the noise distribution was Gaussian with a standard deviation of 0.1.\footnote{\cite{DDPG} uses OU noise, but \cite{spinning_up_ddpg} recommends using Gaussian noise as it is easier to implement and gives similar results}
+    \item SAC: Update freq. of 64 steps, 64 updates per update step, an update threshold of 4096 steps, batch size of 128, $\alpha = 0.5$, learning rate of $5\text{e-}4$, $\gamma = 0.99$, $\tau = 0.995$.
 \end{itemize}
-Each of those parameters were chosen because they resulted in the best performing model.
+Each of those hyperparameters were chosen based roughly on existing literature. Values were tweaked until they resulted in a model that was capable of learning the environment.
 
-Since the goal is to teach Deep RL algorithms how to walk, the networks for each of the algorithms were defined to have two layers, each with 256 neurons. Originally the layers had 128 neurons each but tests using the 256 neuron configuration resulted in better performance. More layers and neurons can, of course, be used but would have greatly increased the computational cost of training.
+All deep neural networks used in these algorithms were multilayer perceptrons with two hidden layers of size 256 each, using the ReLU activation function. From our testing, using 128 neurons per layer frequently caused problems when learning the environment. At 256 neurons, all models seemed to be able to learn the environment sufficiently and adding more neurons would have greatly increased the computational cost of training.
 
-Since every environment has its own quirks, each is described in its own subsection below \cite {gym_source}.
+More detailed information about the tests in each environment is described in its own subsection below the source code for each environment is given by \cite {gym_source}.
 
 \subsection{CartPole-v0}
 
 The objective of the CartPole environment is to teach an agent to balance a pole on a cart by moving the cart left and right. The environment has a continuous observation space consisting of the cart's position, the cart's velocity, the pole's angle, and the pole's angular velocity. The action space is discrete with the options of moving the cart to the left or to the right. The environment rewards the agent with a value of one, simply for staying healthy.
 
-Initially, the values of both the cart and pole are randomly sampled from a uniform distribution from $[-0.5, 0.5]$. The environment is terminated when the angle of the pole is $\pm12\degree$, the cart position hits the edge of the display,or when the length of the episode surpasses 200 steps. The environment is considered solved when the reward is\textgreater 195 for 100 consecutive episodes.
+When the environment is initialized the values of both the cart and pole are randomly sampled from a uniform distribution from $[-0.5, 0.5]$. The environment is terminated if: the angle of the pole is $\pm12\degree$ off center, the cart position hits the edge of the display,or when the length of the episode surpasses 200 steps. The environment is considered solved when the reward is\textgreater 195 for 100 consecutive episodes.
 
-This environment was used as a proof of concept of each algorithm's implementation.
+This environment was used as a qualitative test for the implementation of algorithms with a discrete action space.
 
 \subsection{Pendulum-v1}
 
@@ -276,17 +284,17 @@ $$
 $$
 Since the angle is normalized between $[-\pi, \pi]$ before calculating the reward, the reward has a range of$[-16.3, 0]$.
 
-The environment's initial state has the pole at a random angle between $[-\pi, \pi]$ radians with a random velocity between $[-1, 1]$. The environment does not specify a termination state, so a limit of 150 was imposed. Similarly, the environment does not specify when it is solved, so it was allowed to run until it hit the step limit.
+The environment's initial state has the pole at a random angle between $[-\pi, \pi]$ radians with a random velocity between $[-1, 1]$. The environment does not specify a termination state, so a limit of 150 steps was imposed. Similarly, the environment does not specify when it is solved, so it was allowed to run until it hit the step limit.
 
-Like the CartPole environment, this environment was used as another proof of concept of the implementation for each algorithm.
+Similar to the CartPole environment, this environment was used to test the implementation of algorithms with continuous action spaces.
 
 \subsection{Ant-v3}
 
-The ant is a sphere with four legs, each with two joints. The continuous observation space is significantly more complex than the previous environments: it consists of the model's position, velocity, and the forces between the legs and the ground (contact force). The action space is also continuous and describes where and how quickly to move each joint. The reward encourages the model to move as quickly as possible while moving as few joints as little and softly as possible. It is formulated as
+The MuJoCo Ant-v3 environment has the goal of teaching an ant to move as quickly as possible to the right. The ant is a sphere with four legs, each with two joints. The continuous observation space is significantly more complex than the previous environments: it consists of the model's position, rotations, velocity, and the forces between the legs and the ground (contact force). The action space is also continuous and describes where and how quickly to move each joint. The reward encourages the model to move as quickly as possible while moving as few joints as little and softly as possible. It is formulated as
 $$
     R = (v + h) - (a + f)
 $$
-where $v$ is the velocity in the x-axis, $h$ is the healthy reward configured to be 1, $a$ is the control\_cost calculated by $0.5* \sum actions^{2}$, and $f$ is the contact\_cost calculated by $5e^{-4} * \sum contact\_forces^{2}$.
+where $v$ is the velocity in the x-axis, $h$ is the healthy reward configured to be 1, $a$ is the control\_cost calculated by $0.5* \sum actions^{2}$, and $f$ is the contact\_cost calculated by $5\text{e-}4 * \sum contact\_forces^{2}$.
 
 The environment starts with each joint in a random position with a random velocity. The episode is terminated when the model exits the safe height range of $[0.3, 2.0]$. The environment did not define a solve condition so the episode was continued until the model made a mistake to trigger the termination condition.
 
@@ -294,11 +302,11 @@ The ant was chosen because it is the simplest provided model that meets the "thr
 
 \subsection{Humanoid-v3}
 
-The humanoid model is a humanoid with two legs, two arms, a head and a torso. The legs, arms, and torso are made up of multiple joints, each individually controlled. Like the ant, the observation space is continuous and describes the model's position, the model's velocity, the forces for each of the joints, and the contact forces. The environment also defines a continuous action space that describes the new position and velocity of each joint. The intuition for the reward is the same as for the Ant environment, but it is calculated slightly differently where $v$ is equal to $1.25 * x\_velocity$, $h$ is configured to be 5, $a$ is calculated as $0.1 * \sum actions^{2}$, and $f$ is defined as $5e^{-7} * \sum contact\_forces^{2}$.
+The MuJoCo Humanoid-v3 environment has the goal of teaching an humanoid to move as quickly as possible to the right. The humanoid model is a humanoid with two legs, two arms, a head and a torso. The legs, arms, and torso are made up of multiple joints, each individually controlled. Like the ant, the observation space is continuous and describes the model's position, the model's velocity, the forces for each of the joints, and the contact forces. The environment also defines a continuous action space that describes the new position and velocity of each joint. The intuition for the reward is the same as for the Ant environment, but it is calculated slightly differently where $v$ is equal to $1.25 * x\_velocity$, $h$ is configured to be 5, $a$ is calculated as $0.1 * \sum actions^{2}$, and $f$ is defined as $5\text{e-}7 * \sum contact\_forces^{2}$.
 
 Like the Ant environment, the model starts with each joint in a random position and random velocity. The episode is terminated when the model exits the safe height range of $[1.0, 2.0]$. The environment did not define a solve condition so the episode was continued until the model made a mistake to trigger the termination condition.
 
-The humanoid was chosen because it is the most complex 3D walker and showcased the learning power of the tested algorithms. Since this model is significantly more complex than the Ant, 1,250,000 episodes were used for training. But due to the cost of training, only SAC was trained with this model.
+The humanoid was chosen because it is the most complex 3D walker and showcased the learning power of the tested algorithms. Since this model is significantly more complex than the Ant, 1,250,000 environment interactions were used for training. But due to the cost of training, only SAC was trained with this model.
 
 \section{Results}
 
@@ -308,7 +316,7 @@ To see videos of the agents' performance in some of the following environments s
 
 \subsection{CartPole-v0}
 
-\blindtext
+The CartPole test was qualitative in nature and was used to provide feedback that the our earliest implementations of the algorithms were working. Both the REINFORCE and A2C algorithms were able to solve the environment in a matter of a few minutes. Qualitatively the A2C appeared to have better performance in this environment.
 
 \subsection{Pendulum-v1}
 
@@ -317,7 +325,12 @@ To see videos of the agents' performance in some of the following environments s
     \caption{SAC in the Pendulum-v1 Environment}
 \end{figure}
 
-\blindtext
+\begin{figure}
+    \includegraphics[width=0.45\textwidth]{ddpg-pendulum}
+    \caption{DDPG in the Pendulum-v1 Environment}
+\end{figure}
+
+The tests on the pendulum environment proved that our implementations of A2C, DDPG and SAC were able to solve problems with continuous action spaces. Looking at the reward history in the Figures 1 and 2, it appears that DDPG was able to solve the algorithm faster than SAC. This isn't unexpected, considering that SAC uses significantly neural networks than DDPG and may take longer to train.
 
 \subsection{Ant-v3}
 
@@ -331,7 +344,18 @@ To see videos of the agents' performance in some of the following environments s
     \caption{DDPG in the Ant-v3 environment}
 \end{figure}
 
-While each of the models were able to move the Ant model, they differed in the degree of "intelligence" they showed. For example, A2C mostly flailed the legs around in vague walking motions which caused the model to spin around and jump into the air landing on its back. DDPG, on the otherhand, used the left and right legs to walk, using the front and rear legs for steering. Using this method it was able to achieve quite the distance. But SAC managed to top even that; using the same locomotion scheme as DDPG, the model expertly leapt through the air and even reached the edge of the floor. This is reflected in the performance graphs: the reward history for SAC increases at a steeper rate than it does for DDPG.
+\begin{figure}
+    \includegraphics[width=0.45\textwidth, height=5cm]{a2c-ant}
+    \caption{DDPG in the Ant-v3 environment}
+\end{figure}
+
+
+
+While each of the models were able to move the Ant model, they differed in the degree of "intelligence" they showed. Both A2C and DDPG learned to move the ant to the right, but their techniques were inconsistent and sporadic. Both methods frequently caused the ant to jump and flip around in the generally correct direction, but also frequently would get stuck upside down shortly after beginning.
+
+DDPG was able to use the left and right legs to walk, and used the front and rear legs for steering. Using this method it was able to achieve quite the distance. But SAC managed to top even that; using the same locomotion scheme as DDPG, the model learned to leap through the air and even reached the edge of the floor in the environment. This is reflected in the performance graphs: the reward history for SAC increases at a steeper rate than it does for DDPG.
+
+The main result from this test is that while all algorithms were able to make progress in the environment, SAC was able to significantly outperform the other algorithms. It learned to control the ant in a way that kept itself stable physically and move efficiently.
 
 \subsection{Humanoid-v3}
 
@@ -342,13 +366,17 @@ While each of the models were able to move the Ant model, they differed in the d
 
 Since SAC's performance on the Ant model was so impressive, it was the first to train with the Humanoid model. As shown in the performance graph, it quickly learned how to walk using the arms for balance. After that initial hurdle, it refined its balance technique an opted for a slow and steady strategy by shuffling the feet along the floor. \textit {The SAC Shuffle} allowed the model to walk far into the distance, effectively solving the environment.
 
-Unfortunately, the training for SAC took so long that the other algorithms were not able to be tested with this model.
+Unfortunately, the Humanoid-v3 environment was the most complex environment tested. The SAC model trained for 1,250,000 environment interactions which took over 12 hours using a NVIDIA RTX 3060 Ti. For this reason, testing algorithms we believed to be worse than SAC could not be justified due to time constraints.
 
 \section{Conclusions and Future Work}
 
-Learning to walk is a challenging problem; multiple limbs have to move in a coordinated fashion just to keep balance, adding movement on top of that is a problem that is potentially unsolvable with conventional programming methods. Using Reinforcement learning algorithms, the agent learned, not only, to move a complex model in a 3D environment, but in the case of Soft Actor Critic, to leap its way to success. By implementing and training these algorithms, we are also leaping into success: we now have a solid foundation to begin building new experiences in Reinforcement Learning. We learned the basics of RL like the value and policy functions, policy gradients, and a dictionary's worth of RL vocabulary, all of which will propel us into the future of RL in research and industry.
+Learning to walk is a challenging problem; multiple limbs have to move in a coordinated fashion just to keep balance, adding movement on top of that is a problem that is potentially unsolvable with conventional programming methods. Using Reinforcement learning algorithms we were able to teach an agent to move a complex model in a 3D environment. Further, we found that some models such as SAC were able to learn complex behaviors such as leaping to improve its performance.
 
-To continue learning about RL with MuJoCo, we can implement more algorithms or train with different kinds of models, a bicycle perhaps? But reinforcement learning has a much broader scope than just MuJoCo, we could move on to Multiagent Learning for games like Chess \cite{multiagent}, learning how to play complex single player video games like Dark Souls, or even self driving \cite{self_driving}. Our new foundational knowledge of RL leaves us well equipped to keep up with research and potentially contribute to it ourselves some day.
+By implementing and training these algorithms, we are also leaping into success: we now have a solid foundation to begin building new experiences in Reinforcement Learning. We were introduced the foundations of RL like the value functions and policies, policy gradients, and a dictionary's worth of RL vocabulary. This knowledge of RL theory and application and is undoubtedly valuable for future projects in research and industry.
+
+This project involving RL with MuJoCo could be continued in several different ways. One continuation we can explore would be implementing more algorithms or train with different kinds of environments that impose other interesting challenges. For example, can SAC learn to ride a bicycle? Another way to continue this project would be to explore the affects of hyperparameters in RL algorithms. Do certain hyperparameters affect training similarly between algorithms? How might they differ between algorithms? What are the optimal hyperparameters for different types of environments?
+
+However, reinforcement learning has a much broader scope than just MuJoCo. The algorithms that we implemented could move on to Multiagent Learning for games like Chess \cite{multiagent}, learning how to play complex single player video games like Dark Souls, or even to control self driving vehicles \cite{self_driving}. Our new foundational knowledge of RL leaves us well equipped to keep up with research and contribute to the body of knowledge that is continuing to grow daily.
 
 \bibliography{references}
 \bibliographystyle{ieeetran}
